@@ -1,0 +1,17 @@
+steps:
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["build", "--no-cache", "-t", "$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA", ".", "-f", "Dockerfile"]
+  - name: "gcr.io/cloud-builders/docker"
+    args: ["push", "$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA"]
+  - name: "gcr.io/google.com/cloudsdktool/cloud-sdk:slim"
+    entrypoint: bash
+    args:
+      - -c
+      - |
+        gcloud beta run deploy $_SERVICE_NAME \
+          --image=$_GCR_HOSTNAME/$PROJECT_ID/$REPO_NAME/$_SERVICE_NAME:$COMMIT_SHA \
+          --platform=managed \
+          --region=europe-west1 \
+          --execution-environment=gen2 \
+          --allow-unauthenticated
+timeout: 1800s

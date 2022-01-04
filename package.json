@@ -1,0 +1,28 @@
+{
+  "name": "ribpay-api-docs",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "core-js": "^3.20.2",
+    "dotenv-flow": "^3.2.0",
+    "mobx": "^6.3.10",
+    "next": "12.0.7",
+    "react": "17.0.2",
+    "react-dom": "17.0.2",
+    "redoc": "^2.0.0-rc.59",
+    "redox": "^0.1.1",
+    "styled-components": "^5.3.3"
+  },
+  "devDependencies": {
+    "@types/node": "17.0.7",
+    "@types/react": "17.0.38",
+    "eslint": "8.6.0",
+    "eslint-config-next": "12.0.7",
+    "typescript": "4.5.4"
+  }
+}
