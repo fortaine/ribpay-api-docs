@@ -4,7 +4,7 @@ export default function Document() {
   return (
     <Html>
       <Head>
-        <link rel="icon" type="image/png" href="/img/favicon-oxlin.png" />
+        <link rel="icon" type="image/png" href="/img/favicon-linxo-connect.png" />
       </Head>
       <body>
         <Main />

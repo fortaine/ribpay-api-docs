@@ -7,7 +7,7 @@ const Redoc: NextPage = () => {
   return (
     <Layout title="Reference | Developer Portal">
       <RedocStandalone
-        specUrl="/swaggers/swagger-oxlin-payments-api.yml"
+        specUrl="/swaggers/swagger-payments-api.json"
         options={{
           nativeScrollbars: true,
         }}
