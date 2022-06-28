@@ -1,14 +1,14 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "Payments API",
-    "version": "1.2.1",
-    "description": "# Presentation\n\n## Introduction\n\nPayments API provides you an easy way to initiate a payment from\npayer PSU account to any beneficiary account. Payment initiation can be\nsubdivided in three major steps:\n1. Create an authentication using [POST /token](#operation/postToken).\n2. Create `order` using [POST /orders](#operation/postOrder).\n3. Redirect the payer to the URL in [orders.auth_url](#operation/getAuthorize).\n4. At the end of the consent flow, payer is redirect to\n`orders.redirect_url`, you will get the payment result using\n[GET /running/orders](#operation/getRunningOrder)\nto get `orders.order_status` and\n`orders.instructions.payments.status`.\n\nHere it is, if clear enougth, we will deep into payment technical integration\nworkflow.\n\n> `orders` is the central object you will manipulate during the entire\n> payment lifecycle. It represent the unique consent the payer gave to\n> its bank to initiate one or multiple payments, recurring or not to\n> one or multiple beneficiaries.\n\n## How to test using Sandbox Mode\n\nIn order to simplify your evaluation and your integration of Payments,\nwe provide a `Sandbox Mode` giving you a way to emulate payment. To use it,\nyou only have to use `Sandbox Mode` credentials. Only credentials\n(identifier and password) are different between `Sandbox Mode` and\n`Production Mode`, all URL and objects are unchanged.\n\n> When receiving your `client identifier` and `client password` from Linxo Connect,\n> be sure to remember if they are the one used for `Sandbox Mode` or\n> for `Production Mode`.\n\nTo emulate a payment using sandbox mode credentials, simply:\n- Use IBAN `FR8530003000307599775722N09` as `beneficiary.iban`.\n- Use any name as `beneficiary.name`.\n- Choose any bank from bank selection screen, it will redirect you to a\nbank emulation page.\n- From bank emulation page, you can also emulate the case where the\nredirection to your `redirect_url` doesn't works.\n\n> For payment using `Sandbox Mode`, you have to use\n> `FR8530003000307599775722N09` as `beneficiary.iban` and any value\n> as `beneficiary.name`. When bank will be chosen, bank emulation page\n> will give you following choices:\n> - `AUTHORIZED` will emulate an order authorised but not yet executed by the\n> bank (order AUTHORIZED and payment SUBMITTED).\n> - `EXECUTED` will emulate a payment immediately executed by the bank\n> (order CLOSED and payment EXECUTED).\n> - `REJECTED` will emulate a payment with order refused by the bank\n> (order REJECTED and no payment).\n> - `FAILED` will emulate a payment with order in technical error\n> (order FAILED and no payment).\n> - `EXPIRED` will emulate a payment with order expired\n> (order EXPIRED  and no payment).\n> - `AUTHORIZED then EXECUTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and execute it with a\n> 2 minutes delay in a second time.\n> (order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n> - `AUTHORIZED and REJECTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and reject it with a\n> 2 minutes delay in a second time\n> (order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\nTo emulate a payment with known payer using sandbox mode, you need to use\none of following value for `payer.iban`:\n- `FR9530003000708915516426B35` will : result in an authorized payment\n(order AUTHORIZED and payment SUBMITTED).\n- `FR2130003000302667332151D75` will result in a rejected payment\n(order REJECTED and no payment).\n- `FR5830003000304588896864Y78` will result in a failed payment\n(order FAILED and no payment).\n- `FR4730003000505378875264Q21` will result in a expired payment\n(order EXPIRED  and no payment).\n- `FR4830003000303864238885L38` will result in an executed payment\n(order CLOSED and payment EXECUTED).\n- `FR1030003000505644812371I38` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become executed\n(order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n- `FR9030003000304347365769U57` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become rejected\n(order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\n## Technical integration workflow\n\nAt a technical point of view, initiating a payment will affect four actors:\n- `Customer`: is the payer who have to consent the payment initiation.\n- `Integrator`: it is you as a technical actor who have a commercial relationship\nwith the `Customer`.\n- `Linxo Connect`: Payments API provider is the regulated TPP (Third Party Payment\nService Providers) under PSD2 (Revised Payment Services Directive) that is in\ncharge of initiating a payment for your `Customer`.\n- `Bank`: payer bank that is in charge under PSD2 (Revised Payment Services\nDirective) to authenticate the payer in order to confirm the payment initiation\nrequest.\n\nFor all type of payments (single or multiple, recurring or not, to one or multiple\nbeneficiaries) you have to follow `order` creation flow:\n\n<center><img src=\"/images/linxo_connect_payments_integration.png\" alt=\"Payment flow\" title=\"Payment flow\" width=\"500px\" /></center>\n\n> **iFrame integration**: even if Payments page can be integrated in an iFrame on your side,\nbanks authentication page prevent iFrame integration. It is why, even if you integrate\nPayments in an iFrame, starting bank authentication flow will redirect you to the\nbank side replacing current web context to the bank context. At the end of the authentication\nflow, we will go back to the `redirect_url` in charge opening back your application context.\n\n## Order and Payment lifecycle\n\n<center><img src=\"/images/order-status.png\" alt=\"Order status\" title=\"Order status\" width=\"400px\" /></center>\n\n`order` represent payer consent and define two main categories of states:\n1. Intermediary states:\n  * `NEW`: initial state, order was created but payer wasn't asked to\n  give its consent. In that state, you have to redirect payer to `order.auth_url`\n  in order to request it's consent.\n  * `AUTHORIZED`: payer was redirect to `order.auth_url` and successfully\n  authenticate to its bank. When `AUTHORIZED`, the `order` can define payments,\n  depending on payments `start_date`. `order` will remain in `AUTHORIZED`\n  until there is not any pending payments for it.\n2. Final states:\n  * `CLOSED`: as soon as all instructed payments of an order are in a final state,\n  its status change to `CLOSED` indicating `order` was successfully authenticated,\n  payments were realized (succesfully or not) and it doesn't remain any possible\n  action for concerned `order`.\n  * `REJECTED`: payer authentication was refused, `order` wasn't authorized and is in\n  a final state without instructing any payment.\n  * `FAILED`: payer authentication failed due to technical considerations, `order`\n  wasn't authorized and is in a final state without instructing any payment.\n  * `EXPIRED`: an `order` in status `NEW` expires automaticaly after 30 days.\n\n<center><img src=\"/images/payment-status.png\" alt=\"Payment status\" title=\"Payment status\" width=\"500px\" /></center>\n\nFrom its status `AUTHORIZED`, `order` instructions can produce payments whose\nstatus are divided in the same two categories:\n1. Intermediary states:\n  * `SUBMITTED`: payment was transmitted and confirmed to the bank. Execution is in\n  progress on the bank side.\n2. Final states:\n  * `EXECUTED`: `SUBMITTED` payment was executed from the bank side and funds are\n  available for the beneficiary. Please note there exist cases such instant\n  payment execution where a payment will appear directly in `EXECUTED` without\n  transition from `SUBMITTED` one.\n  * `CANCELLED`: when you close an `AUTHORIZED` order before all instructed payments\n  were `EXECUTED`, pending payments are moved to `CANCELLED` state.\n  * `REJECTED`: `SUBMITTED` payment that was rejected either by payer bank, either\n  by beneficiary bank.\n\n# Technicals considerations\n\n## Errors\n\nThe API uses conventional HTTP response codes to indicate the success or\nfailure of an API request. In general, codes in the 2xx range indicate\nsuccess, codes in the 4xx range indicate an error that fails given the\ninformation provided (e.g., a required parameter was omitted), and codes in\nthe 5xx range indicate an error with our services.\n\nHowever, not all errors map cleanly onto HTTP response codes. When a request\nis valid but does not complete successfully (e.g., an asynchronous\noperation), we return a 402 error code.\n\nAll of the error responses contain the same structure in the body:\n\n| Attribute name      | Description                                        |\n|---------------------|----------------------------------------------------|\n| `error`             | Error code (can be used to manage error on the client). |\n| `error_description` | Human readable english text that describes the error (can be used in logs). |\n| `id`                | Identifies the resource (when applicable). |\n\nExample:\n```\n{\n  \"error\": \"PARAMETER_MISSING\",\n  \"error_description\": \"Missing request header 'X-FWD-Request-ID' for method parameter of type String\",\n  \"id\": \"/v1/accounts\"\n}\n```\n\n## Pagination\n\nWhen the API return a list of elements, the results are paginated.\nBy default the lists is limited to return a result limit of 100 elements\nand are explored on page 1. Calling `GET /xxx` or\n`GET /xxx?page=1&limit=100` will return the same results.\n\nTo help you navigate through the results contained in the JSON responses, we\nprovide `_links` and `_page`properties that let you know where you are in\nthe pagination according following elements:\n- **self** : <https://domain/Resources?page=X&limit=Y>\n- first page : <https://domain/Resources?page=X&limit=Y>\n- last page : <https://domain/Resources?page=X&limit=Y>\n- next page : <https://domain/Resources?page=X&limit=Y>\n- previous page : <https://domain/Resources?page=X&limit=Y>\n- size: <number of elements in the current page>\n- total_elements: <total number of elements>\n- total_pages: <total number of pages>\n- number: <current page number>\n\n`self`, `size`, `total_elements`, `total_pages` and `number` properties are\nmandatories and returned in both paginated and not paginated results. Other\nproperties are only returned on paginated result.\n\nAs an example, you have 1215 `orders`. You call `GET /v1/running/orders` without\npagination parameters, we return 100 and there are still 1115 to explore.\nWe therefore send the following elements in the answer body:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=2&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 1\n  }\n}\n```\n\nAnd if you call the page number 7 `GET /v1/running/orders`:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=7&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=8&limit=100\"\n  },\n  \"prev\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=6&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 7\n  }\n}\n```\n\n## Versioning\n\nThe API is following the semantic versioning (major.minor). The version is\nlocated in the URL, patches on the same version endpoint are\nbackward-compatible.\n\nA minor release can add new resources, parameters or properties. A good\npractice for a client implementation is to design the implementation to\nsupport minor changes.\n\nThe patch releases are not visible to the clients since they are not\nchanging the contract.\n\n## Versions history\n1.2.1:\n- Update documentation on sandbox mode.\n- Update documentation on `favorite_providers`.\n\n1.2.0:\n- Add `instant_payment_header`, `instant_payment_footer`,\n`providers_header` and `providers_search_hint` options on\n`GET /v1/authorize/{order_id}`.\n\n1.1.1:\n- `display_QR_code` corrected to `display_qr_code`.\n- Documentation of `terms_body` updated for clarifications.\n- Documentation of `email` updated for clarifications.\n- Documentation of `payer` and `beneficiary` updated for clarifications\naccording required declaration using Linxo Connect agreement.\n- Documentation of `GET /v1/authorize/{order_id}` updated for clarifications\nin case of `302`.\n- Correction of `EVERY_TWO_MONTH` to `EVERY_TWO_MONTHS`.\n- Correction of `country_code` to `country_codes` including samples using list.\n- `providers.base_url` now optional for internal `providers`.\n- Documentation correction on `v/1/alias`.\n- If `bic` invalide, now we will fail order creation.\n\n1.1.0:\n- Update minor errors in documentation.\n- Update documentation about `app_to_app_support` parameter.\n- Add `app_to_app_support` and `max_start_date_delay` in `POST /v1/providers/search/` result.\n- Add `orders.history` providing a list of orders status changes.\n- Add `display_qr_code` option on `GET /v1/authorize/{order_id}`.\n\n1.0.0:\n- Terms screen personalization using parameters `terms_header`,\n`terms_footer` and `terms_body`.\n\n0.0.22:\n- Adding `page` and `limit` parameters in `POST /v1/providers/search/`.\n\n0.0.21:\n- Adding `providers.app_to_app_support` information.\n- Adding `app_to_app_support` parameter in `GET /v1/providers/`\n\n0.0.20:\n- Sandbox mode, new test case `SUBMITTED and REJECTED (with delay)`.\n- Sandbox mode can emulate the case where the redirection to `redirect_url`\ndoesn't works.\n- Correction of `start_date` description following parameter moving.\n- Change `alias.label` to be mandatory except on creation.\n- Element `_page` is now mandatory on list.\n- Add `bic` on `alias`.\n- `POST /v1/providers/search/` manage list as input and output.\n- Add webview rendering options `display_header`, `item_border_color`,\n`item_border_radius`, `item_arrow_color`, `button_arrow_color`, `button_size`\nand `button_alignment`.\n\n0.0.19:\n- Create new `alias` resource used to store an account.\n- Resource `alias` is available as a schema when defining\na payer or beneficiary account.\n- New option `ask_for_alias` added entering authentication flow used to provide a way for the user to register its account for future usage.\n- New option `ask_for_iban` added entering authentication flow used to directly type a payer account IBAN.\n- Remove for one time `registrations` entity.\n\n0.0.18:\n- Update `beneficiary.name` format to `^[a-zA-Z0-9 ,-]{1,140}$`\n- Parameter `user_reference` have to be optional.\n- Add `sensitive_data` parameter used mask sensitive data such as IBAN.\n- Move parameters `start_date`, `start_date_processing_direction`, `frequency` and `end_date` from `ìnstructions` element to `order` element for a better consistancy according banks capabilities.\n- Add error `400` on `POST /v1/providers/search/`.\n- Update IBAN documentation on `POST /v1/providers/search/`.\n- On `GET /v1/authorize/{order_id}`, rename parameter `lng` to `locale`.\n- On `GET /v1/authorize/{order_id}`, rename parameter `foreground_color` to `elements_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `elements_font`.\n- On `GET /v1/authorize/{order_id}`, add parameter `elements_font_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `secondary_elements_font_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `secondary_elements_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `countries`.\n- On `GET /v1/authorize/{order_id}`, add parameter `button_radius`.\n- Rename `country_code` to `country_codes`.\n- Update `Sandbox Mode` IBAN from `FR9614508000706283415773T72` to `FR8530003000307599775722N09`.\n- Add `max_start_date_delay` on `providers`.\n\n0.0.17:\n- Update `beneficiary.name` format to `^[a-zA-Z0-9 ,-]{1,35}$`\n- Add attribute `start_date_processing_direction` used to describe how to\ninterpret `start_date` when the bank can refuse it.\n\n0.0.16:\n- Add an optional `user_reference` on the `order` to be able to identify external system users.\n- Change label maximum size from 140 to 50 to support all banks restrictions (Boursorama reject label > 50).\n- Change label pattern removing `\\' character (BNP reject label with character '\\`).\n- Add method `POST /v1/providers/search/` in replacement of `GET /v1/providers/{iban}`.\n- Depreciate attribute `orders.instructions.beneficiary.bic` since we can extract the information from the IBAN value.\n- Add `orders.instructions.beneficiary.complementary_name` used to enrich displayed name when beneficiary name is constrained to iban declared name.\n- Update `POST /v1/orders` description in order to detail the two way to represent an `order` with or without multiples instructions.\n- Differentiate BIC documentation according input versus output.\n- Update introcution to be more readable.\n- `Sandbox Mode` documentation.\n- Update `POST /token/` documentation on returned parameters and error codes to be consistant with used authenticaiton manager.\n- `Providers` sare return now associated to list of `country_code` and `GET /v1/providers/` can now be filtered on a list of countries.\n- Parameter `beneficiary.complementary_name` format is now aligned on `beneficiary.name` format.\n\n0.0.15:\n- Describe callback retry policy.\n- Update error enumerates.\n- Rename `instant_payment` enumerate value `FORBIDDEN` to `NO` and `MANDATORY` to `EXPECTED`.\n- Set `instant_payment` default value from `USER_CHOICE` to `NO`.\n- Add `orders.selected_capability` to identify order effective capability.\n\n0.0.14:\n- Remove `nationnal_id` from `providers`.\n- Add `creation_date` on `payments`.\n\n0.0.13:\n- Rework how to get a `Providers` from an IBAN.\n\n0.0.12:\n- Initiate registration services (creation, document upload, listing).\n- Add `GET /institutions` in order to find institution definition from IBAN.\n- No header Client-ID anymore in responses.\n- Document `client_id`in `GET `/authorize'.\n\n0.0.11:\n- Documentation of `display_border`.\n- Constrain payment instruction label to map on SEPA requirements.\n- Update callback format in order to support event on multiple resources.\n\n0.0.10:\n- Correct `GET /orders` to `GET /reporting/orders`.\n- Define API URL to `https://oxlin.io`.\n- Update all versioned resources to `https://oxlin.io/V1` path.\n\n0.0.9:\n- New parameter `light` on widget.\n- New parameter `favorite_providers` on widget.\n- New parameter `title` on widget.\n- New parameter `cancel_url`.\n\n0.0.8:\n- Correct `GET /providers` sample to reference `providers` in spite of\n`orders`.\n- Rename `SINGLE_IMMEDIATE_PAYMENT` to `SINGLE_INSTANT_PAYMENT`.\n- Return `instant_payment` value in `Order`.\n- Rename from `Direct Payment API` to `Oxlin Payments API`\n\n0.0.7:\n- Authorise renamed to authorized.\n\n0.0.6:\n- Remove Basic Authentication support.\n- Document OAuth2 client credential authentication.\n- Document `/token`.\n\n0.0.5:\n- `GET /orders/{order_id}` transformed to `GET /reporting/orders/{order_id}`.\n- `GET /realtime_orders/{order_id}` transformed to `GET /running/orders/{order_id}`.\n- `PUT /orders/{order_id}` transformed to `PUT /running/orders/{order_id}`.\n- Missing order status `EXPIRED` added.\n- `DELETE /suscribe` changed to `POST /unsuscribe`.\n- `PUT /running/orders/{order_id}` can now set payer `BIC`, `email` or `account`\nwhen undefined.\n- Added header Client-ID in response of `GET /reporting/orders/{order_id}`,\n`GET /running/orders/{order_id}` and `GET /orders`.\n- Added `GET /providers`.\n\n0.0.4:\n- Add `end_date` for standing orders.\n- Add `realtime_orders` to distinguish realtime versus reporting flows.\n- Rename `callback` to `webhook callback`.\n- Add order status `FAILED` description.\n- Pagination is using absolute links.\n- X-FWD-Request-ID definition is more explicit.\n- Update and correct redirect_url description.\n- Amount value description correction.\n- Add information about using ISO 8601 extended format for date time.\n- Updating URL length from 140 to 512.\n- `start_date` is now requalified according bank support.\n- Describes how is detected language opening `auth_url`.\n- Rendering options for `auth_url`.\n- Add a description concerning iFrame integration.\n- Order expire after 30 days.\n- Payer bank BIC is valued after authentication, even if the bank was selected\non Direct Payment page.\n- Documentation of `GET /authorize/{order_id}` used to realise order authorisation.\n- Precision about `redirect_url` that shouldn't be limited to `http` and `https`\nscheme name.\n- Removing `end_to_end_id` because such notion doesn't exist for ASPSP API on instruction\nbut exist on payment request. As a consequence, we will use `order.id` that is unique in\norder to uniquely identify the payment request across the entire flow.\n\n0.0.3:\n- Fix amount pattern.\n- Detail payer BIC definition and usage.\n- Add an optional BIC on beneficiary.\n- Add email to manage PSU notification and identification.\n- Move instant_payment up to support the cas where no payer account was defined.\n\n0.0.2:\n- Correction on QUATERLY -> QUARTERLY and MOUNTHLY -> MONTHLY.\n- Spelling corrections.\n- Pluralise amount and beneficiary on schema.\n- T&C is now used for Term & Conditions.\n- Payment and order status, manage instant payment use case.\n- Replace ProviderId by BIC.\n\n0.0.1:\n- Initial version.\n\n# Authentication\n\n<!-- ReDoc-Inject: <security-definitions> -->"
+    "title": "Linxo Connect Payments API",
+    "version": "1.2.2",
+    "description": "# Presentation\n\n## Introduction\n\nLinxo Connect Payments API provides you an easy way to initiate a payment from\npayer PSU account to any beneficiary account. Payment initiation can be\nsubdivided in three major steps:\n1. Create an authentication using [POST /token](oxlin-payments-api.html#operation/postToken).\n2. Create `order` using [POST /orders](oxlin-payments-api.html#operation/postOrder).\n3. Redirect the payer to the URL in [orders.auth_url](oxlin-payments-api.html#operation/getAuthorize).\n4. At the end of the consent flow, payer is redirect to\n`orders.redirect_url`, you will get the payment result using\n[GET /running/orders](oxlin-payments-api.html#operation/getRunningOrder)\nto get `orders.order_status` and\n`orders.instructions.payments.status`.\n\nHere it is, if clear enougth, we will deep into payment technical integration\nworkflow.\n\n> `orders` is the central object you will manipulate during the entire\n> payment lifecycle. It represent the unique consent the payer gave to\n> its bank to initiate one or multiple payments, recurring or not to\n> one or multiple beneficiaries.\n\n## How to test using Sandbox Mode\n\nIn order to simplify your evaluation and your integration of Linxo Connect Payments,\nwe provide a `Sandbox Mode` giving you a way to emulate payment. To use it,\nyou only have to use `Sandbox Mode` credentials. Only credentials\n(identifier and password) are different between `Sandbox Mode` and\n`Production Mode`, all URL and objects are unchanged.\n\n> When receiving your `client identifier` and `client password` from Oxlin,\n> be sure to remember if they are the one used for `Sandbox Mode` or\n> for `Production Mode`.\n\nTo emulate a payment using sandbox mode credentials, simply:\n- Use IBAN `FR8530003000307599775722N09` as `beneficiary.iban`.\n- Use any name as `beneficiary.name`.\n- Choose any bank from bank selection screen, it will redirect you to a\nbank emulation page.\n- From bank emulation page, you can also emulate the case where the\nredirection to your `redirect_url` doesn't works.\n\n> For payment using `Sandbox Mode`, you have to use\n> `FR8530003000307599775722N09` as `beneficiary.iban` and any value\n> as `beneficiary.name`. When bank will be chosen, bank emulation page\n> will give you following choices:\n> - `AUTHORIZED` will emulate an order authorised but not yet executed by the\n> bank (order `AUTHORIZED` and payment `SUBMITTED).\n> - `EXECUTED` will emulate a payment immediately executed by the bank\n> (order CLOSED and payment EXECUTED).\n> - `REJECTED` will emulate a payment with order refused by the bank\n> (order REJECTED and no payment).\n> - `FAILED` will emulate a payment with order in technical error\n> (order FAILED and no payment).\n> - `EXPIRED` will emulate a payment with order expired\n> (order EXPIRED  and no payment).\n> - `AUTHORIZED` then EXECUTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and execute it with a\n> 2 minutes delay in a second time.\n> (order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n> - `AUTHORIZED and REJECTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and reject it with a\n> 2 minutes delay in a second time\n> (order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\nTo emulate a payment with known payer using sandbox mode, you need to use\none of folowing value for `payer.iban`:\n- `FR9530003000708915516426B35 will : result in an authorized payment\n(order `AUTHORIZED` and payment `SUBMITTED).\n- `FR2130003000302667332151D75 will result in a rejected payment\n(order REJECTED and no payment).\n- `FR5830003000304588896864Y78` will result in a failed payment\n(order FAILED and no payment).\n- `FR4730003000505378875264Q21` will result in a expired payment\n(order EXPIRED  and no payment).\n- `FR4830003000303864238885L38` will result in an executed payment\n(order CLOSED and payment EXECUTED).\n- `FR1030003000505644812371I38` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become executed\n(order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n- `FR9030003000304347365769U57` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become rejected\n(order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\n## Technical integration workflow\n\nAt a technical point of view, initiating a payment will affect four actors:\n- `Customer`: is the payer who have to consent the payment initiation.\n- `Integrator`: it is you as a technical actor who have a commercial relationship\nwith the `Customer`.\n- `Oxlin`: Linxo Connect Payments API provider is the regulated TPP (Third Party Payment\nService Providers) under PSD2 (Revised Payment Services Directive) that is in\ncharge of initiating a payment for your `Customer`.\n- `Bank`: payer bank that is in charge under PSD2 (Revised Payment Services\nDirective) to authenticate the payer in order to confirm the payment initiation\nrequest.\n\nFor all type of payments (single or multiple, recurring or not, to one or multiple\nbeneficiaries) you have to follow `order` creation flow:\n\n<center><img src=\"../images/linxo_connect_payments_integration.png\" alt=\"Payment flow\" title=\"Payment flow\" width=\"500px\" /></center>\n\n> **iFrame integration**: even if Linxo Connect Payments page can be integrated in an iFrame on your side,\nbanks authentication page prevent iFrame integration. It is why, even if you integrate\nLinxo Connect Payments in an iFrame, starting bank authentication flow will redirect you to the\nbank side replacing current web context to the bank context. At the end of the authentication\nflow, we will go back to the `redirect_url` in charge opening back your application context.\n\n## Order and Payment lifecycle\n\n<center><img src=\"../images/order-status.png\" alt=\"Order status\" title=\"Order status\" width=\"400px\" /></center>\n\n`order` represent payer consent and define two main categories of states:\n1. Intermediary states:\n  * `NEW`: initial state, order was created but payer wasn't asked to\n  give its consent. In that state, you have to redirect payer to `order.auth_url`\n  in order to request it's consent.\n  * `AUTHORIZED`: payer was redirect to `order.auth_url` and successfully\n  authenticate to its bank. When `AUTHORIZED`, the `order` can define payments,\n  depending on payments `start_date`. `order` will remain in `AUTHORIZED`\n  until there is not any pending payments for it.\n2. Final states:\n  * `CLOSED`: as soon as all instructed payments of an order are in a final state,\n  its status change to `CLOSED` indicating `order` was successfully authenticated,\n  payments were realized (succesfully or not) and it doesn't remain any possible\n  action for concerned `order`.\n  * `REJECTED`: payer authentication was refused, `order` wasn't authorized and is in\n  a final state without instructing any payment.\n  * `FAILED`: payer authentication failed due to technical considerations, `order`\n  wasn't authorized and is in a final state without instructing any payment.\n  * `EXPIRED`: an `order` in status `NEW` expires automaticaly after 30 days.\n\n<center><img src=\"../images/payment-status.png\" alt=\"Payment status\" title=\"Payment status\" width=\"500px\" /></center>\n\nFrom its status `AUTHORIZED`, `order` instructions can produce payments whose\nstatus are divided in the same two categories:\n1. Intermediary states:\n  * `SUBMITTED`: payment was transmitted and confirmed to the bank. Execution is in\n  progress on the bank side.\n2. Final states:\n  * `EXECUTED`: `SUBMITTED` payment was executed from the bank side and funds are\n  available for the beneficiary. Please note there exist cases such instant\n  payment execution where a payment will appear directly in `EXECUTED` without\n  transition from `SUBMITTED` one.\n  * `CANCELLED`: when you close an `AUTHORIZED` order before all instructed payments\n  were `EXECUTED`, pending payments are moved to `CANCELLED` state.\n  * `REJECTED`: `SUBMITTED` payment that was rejected either by payer bank, either\n  by beneficiary bank.\n\n# Technicals considerations\n\n## Errors\n\nThe API uses conventional HTTP response codes to indicate the success or\nfailure of an API request. In general, codes in the 2xx range indicate\nsuccess, codes in the 4xx range indicate an error that fails given the\ninformation provided (e.g., a required parameter was omitted), and codes in\nthe 5xx range indicate an error with our services.\n\nHowever, not all errors map cleanly onto HTTP response codes. When a request\nis valid but does not complete successfully (e.g., an asynchronous\noperation), we return a 402 error code.\n\nAll of the error responses contain the same structure in the body:\n\n| Attribute name      | Description                                        |\n|---------------------|----------------------------------------------------|\n| `error`             | Error code (can be used to manage error on the client). |\n| `error_description` | Human readable english text that describes the error (can be used in logs). |\n| `id`                | Identifies the resource (when applicable). |\n\nExample:\n```\n{\n  \"error\": \"PARAMETER_MISSING\",\n  \"error_description\": \"Missing request header 'X-FWD-Request-ID' for method parameter of type String\",\n  \"id\": \"/v1/accounts\"\n}\n```\n\n## Pagination\n\nWhen the API return a list of elements, the results are paginated.\nBy default the lists is limited to return a result limit of 100 elements\nand are explored on page 1. Calling `GET /xxx` or\n`GET /xxx?page=1&limit=100` will return the same results.\n\nTo help you navigate through the results contained in the JSON responses, we\nprovide `_links` and `_page`properties that let you know where you are in\nthe pagination according following elements:\n- **self** : <https://domain/Resources?page=X&limit=Y>\n- first page : <https://domain/Resources?page=X&limit=Y>\n- last page : <https://domain/Resources?page=X&limit=Y>\n- next page : <https://domain/Resources?page=X&limit=Y>\n- previous page : <https://domain/Resources?page=X&limit=Y>\n- size: <number of elements in the current page>\n- total_elements: <total number of elements>\n- total_pages: <total number of pages>\n- number: <current page number>\n\n`self`, `size`, `total_elements`, `total_pages` and `number` properties are\nmandatories and returned in both paginated and not paginated results. Other\nproperties are only returned on paginated result.\n\nAs an example, you have 1215 `orders`. You call `GET /v1/running/orders` without\npagination parameters, we return 100 and there are still 1115 to explore.\nWe therefore send the following elements in the answer body:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=2&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 1\n  }\n}\n```\n\nAnd if you call the page number 7 `GET /v1/running/orders`:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=7&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=8&limit=100\"\n  },\n  \"prev\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=6&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 7\n  }\n}\n```\n\n## Versioning\n\nThe API is following the semantic versioning (major.minor). The version is\nlocated in the URL, patches on the same version endpoint are\nbackward-compatible.\n\nA minor release can add new resources, parameters or properties. A good\npractice for a client implementation is to design the implementation to\nsupport minor changes.\n\nThe patch releases are not visible to the clients since they are not\nchanging the contract.\n\n## Versions history\n1.2.2:\n- Add `InstantPaymentText` and `SinglePaymentText`.\n- Deprecate `InstantPaymentFooter`.\n- Rename from `Oxlin Payments API` to `Linxo Connect Payments API`\n\n1.2.1:\n- Update documentation on sandbox mode.\n- Update docuemntation on `favorite_providers`.\n\n1.2.0:\n- Add `instant_payment_header`, `instant_payment_footer`,\n`providers_header` and `providers_search_hint` options on\n`GET /v1/authorize/{order_id}`.\n\n1.1.1:\n- `display_QR_code` corrected to `display_qr_code`.\n- Documentation of `terms_body` updated for clarifications.\n- Documentation of `email` updated for clarifications.\n- Documentation of `payer` and `beneficiary` updated for clarifications\naccording required declaration using Linxo Connect agreement.\n- Documentation of `GET /v1/authorize/{order_id}` updated for clarifications\nin case of `302`.\n- Correction of `EVERY_TWO_MONTH` to `EVERY_TWO_MONTHS`.\n- Correction of `country_code` to `country_codes` including samples using list.\n- `providers.base_url` now `optional for internal `providers`.\n- Documentation correction on `v/1/alias`.\n- If `bic` invalide, now we will fail order creation.\n\n1.1.0:\n- Update minor errors in documentation.\n- Update documentation about `app_to_app_support` parameter.\n- Add `app_to_app_support` and `max_start_date_delay` in `POST /v1/providers/search/` result.\n- Add `orders.history` providing a list of orders status changes.\n- Add `display_qr_code` option on `GET /v1/authorize/{order_id}`.\n\n1.0.0:\n- Terms screen personalization using parameters `terms_header`,\n`terms_footer` and `terms_body`.\n\n0.0.22:\n- Adding `page` and `limit` parameters in `POST /v1/providers/search/`.\n\n0.0.21:\n- Adding `providers.app_to_app_support` information.\n- Adding `app_to_app_support` parameter in `GET /v1/providers/`\n\n0.0.20:\n- Sandbox mode, new test case `SUBMITTED and REJECTED (with delay)`.\n- Sandbox mode can emulate the case where the redirection to `redirect_url`\ndoesn't works.\n- Correction of `start_date` description folowing parameter moving.\n- Change `alias.label` to be mandatory except on creation.\n- Element `_page` is now mandatory on list.\n- Add `bic` on `alias`.\n- `POST /v1/providers/search/` manage list as input and output.\n- Add webview rendering options `display_header`, `item_border_color`,\n`item_border_radius`, `item_arrow_color`, `button_arrow_color`, `button_size`\nand `button_alignment`.\n\n0.0.19:\n- Create new `alias` resource used to store an account.\n- Resource `alias` is available as a schema when defining\na payer or beneficiary account.\n- New option `ask_for_alias` added entering authentication flow used to provide a way for the user to register its account for future usage.\n- New option `ask_for_iban` added entering authentication flow used to directly type a payer account IBAN.\n- Remove for one time `registrations` entity.\n\n0.0.18:\n- Update `beneficiary.name` format to `^[a-zA-Z0-9 ,-]{1,140}$`\n- Parameter `user_reference` have to be optional.\n- Add `sensitive_data` parameter used mask sensitive data such as IBAN.\n- Move parameters `start_date`, `start_date_processing_direction`, `frequency` and `end_date` from `ìnstructions` element to `order` element for a better consistancy according banks capabilities.\n- Add error `400` on `POST /v1/providers/search/`.\n- Update IBAN documentation on `POST /v1/providers/search/`.\n- On `GET /v1/authorize/{order_id}`, rename parameter `lng` to `locale`.\n- On `GET /v1/authorize/{order_id}`, rename parameter `foreground_color` to `elements_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `elements_font`.\n- On `GET /v1/authorize/{order_id}`, add parameter `elements_font_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `secondary_elements_font_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `secondary_elements_color`.\n- On `GET /v1/authorize/{order_id}`, add parameter `countries`.\n- On `GET /v1/authorize/{order_id}`, add parameter `button_radius`.\n- Rename `country_code` to `country_codes`.\n- Update `Sandbox Mode` IBAN from `FR9614508000706283415773T72` to `FR8530003000307599775722N09`.\n- Add `max_start_date_delay` on `providers`.\n\n0.0.17:\n- Update `beneficiary.name` format to `^[a-zA-Z0-9 ,-]{1,35}$`\n- Add attribute `start_date_processing_direction` used to describe how to\ninterpret `start_date` when the bank can refuse it.\n\n0.0.16:\n- Add an optional `user_reference` on the `order` to be able to identify external system users.\n- Change label maximum size from 140 to 50 to support all banks restrictions (Boursorama reject label > 50).\n- Change label pattern removing `\\' character (BNP reject label with character '\\').\n- Add method `POST /v1/providers/search/` in replacement of `GET /v1/providers/{iban}`.\n- Depreciate attribute `orders.instructions.beneficiary.bic` since we can extract the information from the IBAN value.\n- Add `orders.instructions.beneficiary.complementary_name` used to enrich displayed name when beneficiary name is constrained to iban declared name.\n- Update `POST /v1/orders` description in order to detail the two way to represent an `order` with or without multiples instructions.\n- Differentiate BIC documentation according input versus output.\n- Update introcution to be more readable.\n- `Sandbox Mode` documentation.\n- Update `POST /token/` documentation on returned parameters and error codes to be consistant with used authenticaiton manager.`\n- `Providers` sare return now associated to list of `country_code` and `GET /v1/providers/` can now be filtered on a list of countries.\n- Parameter `beneficiary.complementary_name` format is now aligned on `beneficiary.name` format.\n\n0.0.15:\n- Describe callback retry policy.\n- Update error enumerates.\n- Rename `instant_payment` enumerate value `FORBIDDEN` to `NO` and `MANDATORY` to `EXPECTED`.\n- Set `instant_payment` default value from `USER_CHOICE` to `NO`.\n- Add `orders.selected_capability` to identify order effective capability.\n\n0.0.14:\n- Remove `nationnal_id` from `providers`.\n- Add `creation_date` on `payments`.\n\n0.0.13:\n- Rework how to get a `Providers` from an IBAN.\n\n0.0.12:\n- Initiate registration services (creation, document upload, listing).\n- Add `GET /institutions` in order to find institution definition from IBAN.\n- No header Client-ID anymore in responses.\n- Document `client_id`in `GET `/authorize'.\n\n0.0.11:\n- Documentation of `display_border`.\n- Constrain payment instruction label to map on SEPA requirements.\n- Update callback format in order to support event on multiple resources.\n\n0.0.10:\n- Correct `GET /orders to `GET /reporting/orders`.\n- Define API URL to `https://oxlin.io`.\n- Update all versioned resources to `https://oxlin.io/V1` path.\n\n0.0.9:\n- New parameter `light` on widget.\n- New parameter `favorite_providers` on widget.\n- New parameter `title` on widget.\n- New parameter `cancel_url`.\n\n0.0.8:\n- Correct `GET /providers` sample to reference `providers` in spite of\n`orders`.\n- Rename `SINGLE_IMMEDIATE_PAYMENT` to `SINGLE_INSTANT_PAYMENT`.\n- Return `instant_payment` value in `Order`.\n- Rename from `Direct Payment API` to `Oxlin Payments API`\n\n0.0.7:\n- Authorise renamed to authorized.\n\n0.0.6:\n- Remove Basic Authentication support.\n- Document OAuth2 client credential authentication.\n- Document `/token`.\n\n0.0.5:\n- `GET /orders/{order_id}` transformed to `GET /reporting/orders/{order_id}`.\n- `GET /realtime_orders/{order_id}` transformed to `GET /running/orders/{order_id}`.\n- `PUT /orders/{order_id}` transformed to `PUT /running/orders/{order_id}`.\n- Missing order status `EXPIRED` added.\n- `DELETE /suscribe` changed to `POST /unsuscribe`.\n- `PUT /running/orders/{order_id}` can now set payer `BIC`, `email` or `account`\nwhen undefined.\n- Added header Client-ID in response of `GET /reporting/orders/{order_id}`,\n`GET /running/orders/{order_id}` and `GET /orders`.\n- Added `GET /providers`.\n\n0.0.4:\n- Add `end_date` for standing orders.\n- Add `realtime_orders` to distinguish realtime versus reporting flows.\n- Rename `callback` to `webhook callback`.\n- Add order status `FAILED` description.\n- Pagination is using absolute links.\n- X-FWD-Request-ID definition is more explicit.\n- Update and correct redirect_url description.\n- Amount value description correction.\n- Add information about using ISO 8601 extended format for date time.\n- Updating URL length from 140 to 512.\n- `start_date` is now requalified according bank support.\n- Describes how is detected language opening `auth_url`.\n- Rendering options for `auth_url`.\n- Add a description concerning iFrame integration.\n- Order expire after 30 days.\n- Payer bank BIC is valued after authentication, even if the bank was selected\non Direct Payment page.\n- Documentation of `GET /authorize/{order_id}` used to realise order authorisation.\n- Precision about `redirect_url` that shouldn't be limited to `http` and `https`\nscheme name.\n- Removing `end_to_end_id` because such notion doesn't exist for ASPSP API on instruction\nbut exist on payment request. As a consequence, we will use `order.id` that is unique in\norder to uniquely identify the payment request across the entire flow.\n\n0.0.3:\n- Fix amount pattern.\n- Detail payer BIC definition and usage.\n- Add an optional BIC on beneficiary.\n- Add email to manage PSU notification and identification.\n- Move instant_payment up to support the cas where no payer account was defined.\n\n0.0.2:\n- Correction on QUATERLY -> QUARTERLY and MOUNTHLY -> MONTHLY.\n- Spelling corrections.\n- Pluralise amount and beneficiary on schema.\n- T&C is now used for Term & Conditions.\n- Payment and order status, manage instant payment use case.\n- Replace ProviderId by BIC.\n\n0.0.1:\n- Initial version.\n"
   },
   "servers": [
     {
       "url": "https://pay.oxlin.io/",
-      "description": "Payments server"
+      "description": "Linxo Connect Payments server"
     }
   ],
   "security": [
@@ -19,7 +19,9 @@
   "paths": {
     "/token": {
       "post": {
-        "tags": ["Authorization"],
+        "tags": [
+          "Authorization"
+        ],
         "summary": "Get an OAuth2 authorization bearer.\n",
         "operationId": "postToken",
         "security": [
@@ -66,7 +68,9 @@
     },
     "/v1/orders": {
       "post": {
-        "tags": ["Payment orders"],
+        "tags": [
+          "Payment orders"
+        ],
         "summary": "Create an order.\n",
         "operationId": "postOrder",
         "description": "Create an order representing one or more payments, today or in the\nfuture to a unique beneficiary or multiples beneficiaries. An order\nis associated to a unique payment initiation, as a consequence it\nis associated to a unique authentication from the PSU bank.\n\nNote the order is valid during a 30 days period. After that delay,\nit will expire automaticaly and you can't use it anymore.\n",
@@ -360,7 +364,9 @@
     },
     "/v1/authorize/{order_id}": {
       "get": {
-        "tags": ["Payment orders"],
+        "tags": [
+          "Payment orders"
+        ],
         "summary": "Start authorisation flow for an order.\n",
         "security": [],
         "operationId": "getAuthorize",
@@ -400,7 +406,13 @@
             "$ref": "#/components/parameters/InstantPaymentHeader"
           },
           {
-            "$ref": "#/components/parameters/InstantPaymentFooter"
+            "$ref": "#/components/parameters/InstantPaymentText"
+          },
+          {
+            "$ref": "#/components/parameters/SinglePaymentText"
+          },
+          {
+            "$ref": "#/components/parameters/InstantPaymentFooterDeprecated"
           },
           {
             "$ref": "#/components/parameters/ProvidersHeader"
@@ -550,7 +562,9 @@
     },
     "/v1/running/orders/{order_id}": {
       "get": {
-        "tags": ["Payment orders"],
+        "tags": [
+          "Payment orders"
+        ],
         "summary": "Get a specific order for realtime access.\n",
         "operationId": "getRunningOrder",
         "description": "Retrieve a specific order based on its unique identifier for realtime access.\nAs a consequence, **can only be used to get an `orders` during the realtime flow**\nmeans **while order is in its initial state `NEW` and during the next 10 minutes\nafter it was updated to another status**. The method have to be only used for\nhigh availability services, if it doesn't return any `orders`, you are probably\nusing the wrong method and have to deep into using `GET v1/reporting/orders/XXX`.\n\nEach order represent one or more payments,\ntoday or in the future, to a unique beneficiary or multiples\nbeneficiaries. An order is associated to one or more instructions but to a\nunique payment initiation at the bank side, as a consequence it is associated\nto a unique authentication from the PSU bank.\n",
@@ -814,7 +828,9 @@
         }
       },
       "put": {
-        "tags": ["Payment orders"],
+        "tags": [
+          "Payment orders"
+        ],
         "summary": "Update a specific order.\n",
         "operationId": "putOrder",
         "description": "Update a specific order based on its unique identifier. It is possible\nto update:\n  - `order_status`: an order in status `NEW` or `AUTHORIZED` can be\n  changed to status `CLOSED`. In such case, order won't create any\n  new payments after status change, however existing payments status\n  won't change and are kept in current state.\n  - `bic`: you can change payer bank identification for an order in\n  status `NEW` with `order.bic` **undefined**.\n  - `email`: you can change payer email for an order in\n  status `NEW` with `orders.email` **undefined**.\n  - `selected_capability`: you can change payment used capability for an order in\n  status `NEW` with `orders.instructions.payments` **undefined**.\n  - `payer`: you can change payer account for an order in\n  status `NEW` with `order.payer` **undefined**.\n",
@@ -902,7 +918,9 @@
     },
     "/v1/reporting/orders/{order_id}": {
       "get": {
-        "tags": ["Payment orders"],
+        "tags": [
+          "Payment orders"
+        ],
         "summary": "Get a specific order.\n",
         "operationId": "getOrder",
         "description": "Retrieve a specific order based on its unique identifier.\nEach order represent one or more payments,\ntoday or in the future, to a unique beneficiary or multiples\nbeneficiaries. An order is associated to a unique payment initiation,\nas a consequence it is associated to a unique authentication from the\nPSU bank.\n",
@@ -1168,7 +1186,9 @@
     },
     "/v1/reporting/orders/": {
       "get": {
-        "tags": ["Payment orders"],
+        "tags": [
+          "Payment orders"
+        ],
         "summary": "Returns a list of orders.\n",
         "description": "Get the list of `orders`. Each order represents one or more payments,\ntoday or in the future, to a unique beneficiary or multiple\nbeneficiaries. An order is associated to a unique payment initiation,\nas a consequence it is associated to a unique authentication from the\nPSU bank.\n",
         "parameters": [
@@ -1240,13 +1260,19 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": ["self"]
+                      "required": [
+                        "self"
+                      ]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": ["orders", "_links", "_page"],
+                  "required": [
+                    "orders",
+                    "_links",
+                    "_page"
+                  ],
                   "example": {
                     "orders": [
                       {
@@ -1501,7 +1527,9 @@
     },
     "/v1/alias": {
       "post": {
-        "tags": ["Account alias"],
+        "tags": [
+          "Account alias"
+        ],
         "summary": "Create an alias.\n",
         "operationId": "postAlias",
         "description": "Create an account alias used to store account identification\nin order to be reused for future payments.\n",
@@ -1606,7 +1634,9 @@
     },
     "/v1/alias/{alias_id}": {
       "get": {
-        "tags": ["Account alias"],
+        "tags": [
+          "Account alias"
+        ],
         "summary": "Get a specific account alias.\n",
         "operationId": "getAlias",
         "description": "Retrieve a specific account alias based on its unique identifier.\nAn account alias is used to store accounts identification\nin order to be reused for future payments.\n",
@@ -1658,7 +1688,9 @@
         }
       },
       "put": {
-        "tags": ["Account alias"],
+        "tags": [
+          "Account alias"
+        ],
         "summary": "Update a specific alias.\n",
         "operationId": "putAlias",
         "description": "Update a specific account alias based on its unique identifier.\nIt is possible to update:\n  - `label`: the alias label.\n",
@@ -1717,7 +1749,9 @@
         }
       },
       "delete": {
-        "tags": ["Account alias"],
+        "tags": [
+          "Account alias"
+        ],
         "summary": "Delete a specific alias.\n",
         "operationId": "deleteAlias",
         "description": "Delete a specific alias based on its unique identifier.\n",
@@ -1764,7 +1798,9 @@
     },
     "/v1/alias/": {
       "get": {
-        "tags": ["Account alias"],
+        "tags": [
+          "Account alias"
+        ],
         "summary": "Returns a list of alias.\n",
         "description": "Get the list of alias based on search criteria.\nAn account alias is used to store accounts identification\nin order to be reused for future payments.\n",
         "parameters": [
@@ -1824,13 +1860,19 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": ["self"]
+                      "required": [
+                        "self"
+                      ]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": ["orders", "_links", "_page"],
+                  "required": [
+                    "orders",
+                    "_links",
+                    "_page"
+                  ],
                   "example": {
                     "aliases": [
                       {
@@ -1894,7 +1936,9 @@
     },
     "/v1/providers": {
       "get": {
-        "tags": ["Providers"],
+        "tags": [
+          "Providers"
+        ],
         "summary": "Return a list of providers.\n",
         "description": "Get the list of `providers` that can be used to initiate payments.\n",
         "parameters": [
@@ -1960,19 +2004,27 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": ["self"]
+                      "required": [
+                        "self"
+                      ]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": ["providers", "_links", "_page"],
+                  "required": [
+                    "providers",
+                    "_links",
+                    "_page"
+                  ],
                   "example": {
                     "providers": [
                       {
                         "bic": "BICTEST1",
                         "name": "Test Bank 1",
-                        "country_codes": ["FR"],
+                        "country_codes": [
+                          "FR"
+                        ],
                         "base_url": "https://www.testbank1.com",
                         "payment_capabilities": [
                           "SINGLE_PAYMENT",
@@ -1983,9 +2035,13 @@
                       {
                         "bic": "BICTEST2",
                         "name": "Test Bank 2",
-                        "country_codes": ["FR"],
+                        "country_codes": [
+                          "FR"
+                        ],
                         "base_url": "https://www.testbank2.com",
-                        "payment_capabilities": ["SINGLE_INSTANT_PAYMENT"],
+                        "payment_capabilities": [
+                          "SINGLE_INSTANT_PAYMENT"
+                        ],
                         "logo_url": "https://static.oxlin.io/common/pictures/providers_logos/BICTEST2.png"
                       }
                     ],
@@ -2031,9 +2087,11 @@
     },
     "/v1/providers/search/": {
       "post": {
-        "tags": ["Providers"],
+        "tags": [
+          "Providers"
+        ],
         "summary": "Returns a list of providers from search criterion.\n",
-        "description": "Returns  `providers` based on search criterion such as\nInternational Bank Account Number (IBAN). Only 'providers' returned\nwith `payment_capabilities` can be used to initiate payments. If\n`payment_capabilities` is undefined, Payments doesn't support\nit as `payer` provider.\n",
+        "description": "Returns  `providers` based on search criterion such as\nInternational Bank Account Number (IBAN). Only 'providers' returned\nwith `payment_capabilities` can be used to initiate payments. If\n`payment_capabilities` is undefined,  Linxo Connect Payments doesn't support\nit as `payer` provider.\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/X-FWD-Request-ID"
@@ -2120,13 +2178,19 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": ["self"]
+                      "required": [
+                        "self"
+                      ]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": ["result", "_links", "_page"]
+                  "required": [
+                    "result",
+                    "_links",
+                    "_page"
+                  ]
                 },
                 "examples": {
                   "Supported provider": {
@@ -2141,7 +2205,9 @@
                             {
                               "bic": "BICTEST1",
                               "name": "Test Bank 1",
-                              "country_codes": ["FR"],
+                              "country_codes": [
+                                "FR"
+                              ],
                               "base_url": "https://www.testbank1.com",
                               "payment_capabilities": [
                                 "SINGLE_PAYMENT",
@@ -2186,7 +2252,9 @@
                             {
                               "bic": "AGRIFRPP882",
                               "name": "CRCAM DE PARIS ET D ILE DE FRANCE",
-                              "country_code": ["FR"],
+                              "country_code": [
+                                "FR"
+                              ],
                               "logo_url": "https://static.oxlin.io/common/pictures/providers_logos/country.png"
                             }
                           ]
@@ -2235,7 +2303,9 @@
     },
     "/v1/subscribe": {
       "post": {
-        "tags": ["Callback webhooks"],
+        "tags": [
+          "Callback webhooks"
+        ],
         "summary": "Register webhook callback URL.\n",
         "description": "Register your system webhook callback URL we will call each time a resource\nwill be updated. When registered, callback URL will be called as\n`GET https://your.callback.url?resource_type=YYYYYY&resource_id=XXXXXX`\nwith `YYYYYY` the type of updated resource and `XXXXXX` its reference.\nTo know changes on the resource, you need to call the resource specific\nmethod. For instance if the resource is an order, you will call\n`GET v1/running/orders/XXXXXX`in order to get the updated object and\nmanage actions on your system accordingly.\n",
         "parameters": [
@@ -2258,7 +2328,9 @@
                     "$ref": "#/components/schemas/CallbackURL"
                   }
                 },
-                "required": ["callback_url"],
+                "required": [
+                  "callback_url"
+                ],
                 "example": {
                   "callback_url": "https://domain/callback"
                 }
@@ -2270,7 +2342,7 @@
           "order_updated": {
             "{$request.body#/callback_url}": {
               "get": {
-                "summary": "URL called on your system each time a resource such as an\n order will be updated.\n",
+                "summary": "URL called on your system each time a resource such as an\n`order` will be updated.\n",
                 "description": "Each time we will update a resource we will call your registered\n`callback_url` with parameters to identify\nupdated resource and no content. With that reference, you\nhave to retrieve resource to get more details about updates.\nWebhook calls are acknowledged when a response is given with\na 2XX status code. If a call times out or the status code is not 2XX,\nwe will try to notify you again using an exponential backoff policy\nwith jitter that will increase the resend interval for each failure.\nThe first attemps occurs after 10 seconds and the delay can increase\nup to 6 hours. After 3 days of failure on calling your webhook,\nnotifications attemps will stop.\n",
                 "parameters": [
                   {
@@ -2324,7 +2396,9 @@
     },
     "/v1/unsubscribe": {
       "post": {
-        "tags": ["Callback webhooks"],
+        "tags": [
+          "Callback webhooks"
+        ],
         "summary": "Unregister the webhook callback URL.\n",
         "description": "Unregister your system webhook callback URL that will be not called anymore.\n",
         "parameters": [
@@ -2399,14 +2473,21 @@
           "token_type": {
             "description": "Define access token type:\n- `Bearer`: Client credential bearer.\n",
             "type": "string",
-            "enum": ["Bearer"]
+            "enum": [
+              "Bearer"
+            ]
           },
           "expires_in": {
             "description": "Token will expires after the number of seconds defined by the field.\n",
             "type": "integer"
           }
         },
-        "required": ["access_token", "scope", "token_type", "expires_in"],
+        "required": [
+          "access_token",
+          "scope",
+          "token_type",
+          "expires_in"
+        ],
         "example": {
           "access_token": "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJjYjYwY2E3Y2Q2NjNmMTMxOTdiZiIsImlzcyI6Imh0dHBzOi8vc2FuZGJveC1hdXRoLm94bGluLmlvIiwic3ViIjoiYjUwZTAyODItMjJlZi00ODUxLWJlZDgtOTZlMzc5MmM1OWI5IiwiYXVkIjoiYjUwZTAyODItMjJlZi00ODUxLWJlZDgtOTZlMzc5MmM1OWI5IiwiZXhwIjoxNTk0MjIxMjQ5LCJpYXQiOjE1OTQyMTc2NDksInNjb3BlIjoidXNlcnNfY3JlYXRlIHByb2ZpbGUgb3BlbmlkIn0.CzwmfvHa46M0RHHtYqlNFBSovbrKOv8ezZM5sroJzyUU0aPHHW2aoFO6zwx5vMW1Sox7MqD-Jhs7R7pff_-qr1DBDsxvvCO-DQZw7SjW5DmDjQVyaQlpUiwASOYJyZIyd3K71kROkU6TeL9i2OR7yLDtpj_56fTZWxg9Y1vGv-bUoPhXx2JgzvqyrzfDoadJ6s7_dOxoQFpsYM5lqIWVuWx82uXWL6cWB4usynKJcGe6k6EGLxwzJ0OqmBd1WnPSvywMqzMI5QCTZ7DkFJw2AGnPy-C8keZBL2BwJIzgiaH6j_80P8NdisxxcQlRHz7VTrvwF1rqxgT2adU8Jtt_RCKlvZ44jxCN7fDk28sot2LEAMC1VC3A0BWrhY6EX84hUW_ZJIFJG6753xCDzZ9bZcYVjC5yW0DCcT8CP3xXeOkIAdo6ZpfbMgntpNGk0ZPyiTUhCwr9s17t5DuDyCCwJ5O4eZhHqYRhRspExvuFtbldIsCYDARvBZe-EQ3jjkuFnCHmd-whZ5qcd6sEiRferthzC05NfufFitGoVLYrBYSHeaUE8mNeSgAeadoBrBxDTjOq_B2NdoiGo3UbVD2oi7As7WfohF8SSNXHqRJId3vcQBx4yxzilU2QfoFnfhJtbDcR2xElg36rJGLWLZQLpd7qQkuw_ADPddsJVxSqND4",
           "token_type": "Bearer",
@@ -2420,7 +2501,9 @@
           "grant_type": {
             "description": "Describe type of requested grant:\n  - `client_credentials`: client credential grant type is the only supported value.\n",
             "type": "string",
-            "enum": ["client_credentials"]
+            "enum": [
+              "client_credentials"
+            ]
           }
         }
       },
@@ -2451,7 +2534,12 @@
             "description": "The logo URL for the provider.\n"
           }
         },
-        "required": ["bic", "name", "country_codes", "logo_url"]
+        "required": [
+          "bic",
+          "name",
+          "country_codes",
+          "logo_url"
+        ]
       },
       "ProviderItemInternal": {
         "description": "A provider we can initiate a payment from.\n",
@@ -2485,7 +2573,9 @@
             "type": "number"
           }
         },
-        "required": ["payment_capabilities"]
+        "required": [
+          "payment_capabilities"
+        ]
       },
       "ProviderItemInternalOrExternal": {
         "description": "A provider we can initiate a payment from when 'payment_capabilities'\nis returned or were we can't initiate a payment from in other cases.\n",
@@ -2612,7 +2702,12 @@
             }
           }
         },
-        "required": ["id", "order_status", "payments", "redirect_url"],
+        "required": [
+          "id",
+          "order_status",
+          "payments",
+          "redirect_url"
+        ],
         "example": {
           "id": "987123",
           "bic": "AXABFRPP",
@@ -2691,7 +2786,10 @@
             }
           }
         },
-        "required": ["instructions", "redirect_url"]
+        "required": [
+          "instructions",
+          "redirect_url"
+        ]
       },
       "SingleInstructionOrder": {
         "description": "An order represent one or more payments, today or in the future, to a\nunique beneficiary or multiples beneficiaries. An order is associated\nto a unique payment initiation, as a consequence it is associated to\na unique authentication from the PSU bank.\n",
@@ -2734,7 +2832,9 @@
             "$ref": "#/components/schemas/InstructionItemCreate"
           }
         },
-        "required": ["redirect_url"]
+        "required": [
+          "redirect_url"
+        ]
       },
       "OrderItemUpdate": {
         "description": "An order represent one or more payments, today or in the future, to a\nunique beneficiary or multiples beneficiaries. An order is associated\nto a unique payment initiation, as a consequence it is associated to\na unique authentication from the PSU bank.\n",
@@ -2780,7 +2880,12 @@
             }
           }
         },
-        "required": ["amount", "currency", "beneficiary", "label"],
+        "required": [
+          "amount",
+          "currency",
+          "beneficiary",
+          "label"
+        ],
         "example": {
           "amount": "123.45",
           "currency": "EUR",
@@ -2819,7 +2924,12 @@
             "$ref": "#/components/schemas/Label"
           }
         },
-        "required": ["amount", "currency", "beneficiary", "label"]
+        "required": [
+          "amount",
+          "currency",
+          "beneficiary",
+          "label"
+        ]
       },
       "PaymentItem": {
         "description": "A payment represent a money transfer from a payer account to a\nbeneficiary account. Payment is created when instruction was\ntransmitted to the payer bank.\n",
@@ -2878,7 +2988,10 @@
             "$ref": "#/components/schemas/PayerBic"
           }
         },
-        "required": ["user_reference", "account"]
+        "required": [
+          "user_reference",
+          "account"
+        ]
       },
       "AliasItemUpdate": {
         "description": "An alias represent a stored account identification.\n",
@@ -2890,7 +3003,9 @@
             "pattern": "^[a-zA-Z0-9 ,-]{1,140}$"
           }
         },
-        "required": ["label"]
+        "required": [
+          "label"
+        ]
       },
       "AliasItem": {
         "description": "An alias represent a stored account identification.\n",
@@ -2914,7 +3029,12 @@
             "$ref": "#/components/schemas/PayerBic"
           }
         },
-        "required": ["id", "user_reference", "label", "account"]
+        "required": [
+          "id",
+          "user_reference",
+          "label",
+          "account"
+        ]
       },
       "OrderHistoryItem": {
         "description": "Order status change event.\n",
@@ -2927,7 +3047,10 @@
             "$ref": "#/components/schemas/ChangeDate"
           }
         },
-        "required": ["order_status", "change_date"]
+        "required": [
+          "order_status",
+          "change_date"
+        ]
       },
       "OrderId": {
         "description": "Universally Unique IDentifier for `Order`.\n",
@@ -2950,7 +3073,9 @@
       "ResourceType": {
         "description": "Define payment schema:\n- `ORDERS`: Order.\n",
         "type": "string",
-        "enum": ["ORDERS"],
+        "enum": [
+          "ORDERS"
+        ],
         "example": "ORDERS"
       },
       "InputPayerBic": {
@@ -3077,7 +3202,9 @@
         "discriminator": {
           "propertyName": "schema"
         },
-        "required": ["schema"]
+        "required": [
+          "schema"
+        ]
       },
       "FPSAccountItem": {
         "description": "Represent a Faster Payment payer or beneficiary account.\n",
@@ -3101,7 +3228,11 @@
                 "type": "string"
               }
             },
-            "required": ["name", "sort_code", "account_number"],
+            "required": [
+              "name",
+              "sort_code",
+              "account_number"
+            ],
             "example": {
               "name": "John Dupont",
               "sort_code": "102030",
@@ -3123,7 +3254,9 @@
                 "$ref": "#/components/schemas/IBANPayer"
               }
             },
-            "required": ["iban"],
+            "required": [
+              "iban"
+            ],
             "example": {
               "iban": "FR7612345987650123456789014"
             }
@@ -3156,7 +3289,10 @@
                 "$ref": "#/components/schemas/BeneficiaryBic"
               }
             },
-            "required": ["iban", "name"],
+            "required": [
+              "iban",
+              "name"
+            ],
             "example": {
               "iban": "FR7612345987650123456789014",
               "name": "Jean Dupond"
@@ -3177,18 +3313,20 @@
                 "$ref": "#/components/schemas/AliasId"
               }
             },
-            "required": ["alias_id"]
+            "required": [
+              "alias_id"
+            ]
           }
         ]
       },
       "IBANBeneficiary": {
-        "description": "International Bank Account Number (IBAN) - identification used\ninternationally by financial institutions to uniquely identify the\naccount of a customer.\n\n> For payment using `Sandbox Mode`, you have to use\n> `FR8530003000307599775722N09` as `beneficiary.iban` and any value\n> as `beneficiary.name`. When bank will be chosen, bank emulation page\n> will give you following choices:\n> - `SUBMITTED` will emulate a payment authorised but not yet executed by the bank.\n> - `REJECTED` will emulate a payment refused by the bank.\n> - `EXECUTED` will emulate a payment immediately executed by the bank.\n> - `SUBMITTED and EXECUTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and execute it with a\n> 2 minutes delay in a second time.\n\n> Using Linxo Connect agreements, only declared beneficiaries or payer IABN can\n> be used depending on the contract you've suscribed. If your beneficiary\n> is rejected, check if you've declared it when opening your Payments\n> contract. Contact Linxo Connect support otherwise.\n",
+        "description": "International Bank Account Number (IBAN) - identification used\ninternationally by financial institutions to uniquely identify the\naccount of a customer.\n\n> For payment using `Sandbox Mode`, you have to use\n> `FR8530003000307599775722N09` as `beneficiary.iban` and any value\n> as `beneficiary.name`. When bank will be chosen, bank emulation page\n> will give you following choices:\n> - `SUBMITTED` will emulate a payment authorised but not yet executed by the bank.\n> - `REJECTED` will emulate a payment refused by the bank.\n> - `EXECUTED` will emulate a payment immediately executed by the bank.\n> - `SUBMITTED and EXECUTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and execute it with a\n> 2 minutes delay in a second time.\n\n> Using Linxo Connect agreements, only declared beneficiaries or payer IABN can\n> be used depending on the contract you've suscribed. If your beneficiary\n> is rejected, check if you've declared it when opening your Linxo Connect Payments\n> contract. Contact Oxlin support otherwise.\n",
         "type": "string",
         "pattern": "^[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}$",
         "example": "FR7612345987650123456789014"
       },
       "IBANPayer": {
-        "description": "International Bank Account Number (IBAN) - identification used\ninternationally by financial institutions to uniquely identify the\naccount of a customer.\n\n> Using Linxo Connect agreements, only declared beneficiaries or payer IBAN can\n> be used depending on the contract you've suscribed. If your payer\n> is rejected, check if you've declared when opening your Payments\n> contract. Contact Linxo Connect support otherwise.\n",
+        "description": "International Bank Account Number (IBAN) - identification used\ninternationally by financial institutions to uniquely identify the\naccount of a customer.\n\n> Using Linxo Connect agreements, only declared beneficiaries or payer IBAN can\n> be used depending on the contract you've suscribed. If your payer\n> is rejected, check if you've declared when opening your Linxo Connect Payments\n> contract. Contact Oxlin support otherwise.\n",
         "type": "string",
         "pattern": "^[A-Z]{2,2}[0-9]{2,2}[a-zA-Z0-9]{1,30}$",
         "example": "FR7612345987650123456789014"
@@ -3196,7 +3334,11 @@
       "PaymentSchema": {
         "description": "Define payment schema:\n- `SEPA`: SEPA payment.\n- `FPS`: Faster Payment, UK instant payment schema.\n- `ALIAS`: An alias representing registered account .\n\n> `ALIAS` value is only available in a context you can use an `ALIAS`,\n> as a consequence  it can't be valid when defining an `ALIAS`.\n",
         "type": "string",
-        "enum": ["SEPA", "FPS", "ALIAS"],
+        "enum": [
+          "SEPA",
+          "FPS",
+          "ALIAS"
+        ],
         "example": "SEPA"
       },
       "PaymentCapability": {
@@ -3212,7 +3354,10 @@
       "AppToAppSupport": {
         "description": "Operating system type supporting application to application authentication flow.\n  - `ANDROID`: App to App flow is supported on Android devices.\n  - `IOS`: App to App flow is supported on iOS devices.\n",
         "type": "string",
-        "enum": ["ANDROID", "IOS"]
+        "enum": [
+          "ANDROID",
+          "IOS"
+        ]
       },
       "CountryCode": {
         "description": "Bank supported market ISO-3166 Alpha-2 country code.\n",
@@ -3221,14 +3366,21 @@
       "InstantPaymentType": {
         "description": "Define expectation according instant payment:\n- `EXPECTED`: only instant payment can be offered to initialize a payment.\n- `USER_CHOICE`: debtor user can choose in the case the bank support instant payment.\n- `NO`: only non instant payment can be offered to initialize a payment.\n",
         "type": "string",
-        "enum": ["EXPECTED", "USER_CHOICE", "NO"],
+        "enum": [
+          "EXPECTED",
+          "USER_CHOICE",
+          "NO"
+        ],
         "default": "NO",
         "example": "EXPECTED"
       },
       "SensitiveData": {
-        "description": "Define if Payments API return sensitive data:\n- `ALL`: all available data are returned with customer agreement.\n- `NONE`: no sensitive data are returned, payer and beneficiary IBAN are masked.\n",
+        "description": "Define if Linxo Connect Payments API return sensitive data:\n- `ALL`: all available data are returned with customer agreement.\n- `NONE`: no sensitive data are returned, payer and beneficiary IBAN are masked.\n",
         "type": "string",
-        "enum": ["ALL", "NONE"],
+        "enum": [
+          "ALL",
+          "NONE"
+        ],
         "default": "ALL",
         "example": "ALL"
       },
@@ -3248,7 +3400,12 @@
       "PaymentStatus": {
         "description": "Define instructed payment status:\n- `SUBMITTED`: Intermediary state, payment was transmitted to the bank\nbut not yet executed.\n- `EXECUTED`: Final state, payment was executed.\n- `CANCELLED`: Final state, payment was cancelled.\n- `REJECTED`: Final state, payment was rejected.\n",
         "type": "string",
-        "enum": ["SUBMITTED", "EXECUTED", "CANCELLED", "REJECTED"],
+        "enum": [
+          "SUBMITTED",
+          "EXECUTED",
+          "CANCELLED",
+          "REJECTED"
+        ],
         "example": "SUBMITTED"
       },
       "Frequency": {
@@ -3269,7 +3426,10 @@
       "DateUpdateDirection": {
         "description": "Define how to update the date when the bank limit it for instance refusing\na Target 2 calendar date :\n- `NONE`: don’t update the date (reject the date if it is not supported by the bank).\n- `BOTH`: find a new date before or after the given date (keep closest).\n",
         "type": "string",
-        "enum": ["NONE", "BOTH"],
+        "enum": [
+          "NONE",
+          "BOTH"
+        ],
         "default": "BOTH",
         "example": "NONE"
       },
@@ -3321,7 +3481,9 @@
             ]
           }
         },
-        "required": ["href"],
+        "required": [
+          "href"
+        ],
         "example": [
           {
             "href": "https://domain/context/resource"
@@ -3352,7 +3514,10 @@
             }
           }
         },
-        "required": ["person", "accounts"]
+        "required": [
+          "person",
+          "accounts"
+        ]
       },
       "RegistrationItemUpdate": {
         "description": "A registration represent a natural or legal person we want to declare\nin the system. We can associate documents, accounts... to the registration\nin order to realize legal verification depending on the use case.\n",
@@ -3395,7 +3560,13 @@
             }
           }
         },
-        "required": ["id", "service_level", "status", "person", "accounts"]
+        "required": [
+          "id",
+          "service_level",
+          "status",
+          "person",
+          "accounts"
+        ]
       },
       "Person": {
         "description": "Beneficiary account for instructed payments.",
@@ -3431,7 +3602,9 @@
             "$ref": "#/components/schemas/Location"
           }
         },
-        "required": ["location"]
+        "required": [
+          "location"
+        ]
       },
       "NaturalPerson": {
         "description": "describe a natural person.\n",
@@ -3459,7 +3632,13 @@
             }
           }
         },
-        "required": ["type", "name", "surname", "birth_date", "birth_place"]
+        "required": [
+          "type",
+          "name",
+          "surname",
+          "birth_date",
+          "birth_place"
+        ]
       },
       "Company": {
         "description": "Describe a company.\n",
@@ -3551,7 +3730,12 @@
             }
           }
         },
-        "required": ["type", "name", "address", "registration_number"]
+        "required": [
+          "type",
+          "name",
+          "address",
+          "registration_number"
+        ]
       },
       "RegistrationId": {
         "description": "Universally Unique IDentifier for `Registers`.\n",
@@ -3599,7 +3783,16 @@
       "CompanyLegalForm": {
         "description": "Registration person type:\n- `SA`: SA.\n- `SARL`: SARL.\n- `EURL`: EURL.\n- `SAS`: SAS.\n- `SASU`: SASU.\n- `SCP`: SCP.\n- `SELARL`: SELARL.\n- `SNC`: SNC.\n",
         "type": "string",
-        "enum": ["SA", "SARL", "EURL", "SAS", "SASU", "SCP", "SELARL", "SNC"],
+        "enum": [
+          "SA",
+          "SARL",
+          "EURL",
+          "SAS",
+          "SASU",
+          "SCP",
+          "SELARL",
+          "SNC"
+        ],
         "example": "SARL"
       },
       "CompanyNationalIdentification": {
@@ -3659,7 +3852,12 @@
             "type": "string"
           }
         },
-        "required": ["street", "city", "zipcode", "country"]
+        "required": [
+          "street",
+          "city",
+          "zipcode",
+          "country"
+        ]
       },
       "Account": {
         "description": "Describe an account.\n",
@@ -3689,7 +3887,9 @@
             "$ref": "#/components/schemas/DocumentType"
           }
         },
-        "required": ["description"]
+        "required": [
+          "description"
+        ]
       },
       "IdProof": {
         "description": "Universally Unique IDentifier for `Registers`.\n",
@@ -3725,13 +3925,22 @@
       "ServiceLevel": {
         "description": "Registration person type:\n- `FULL`: Full access to services capabilities.\n- `PARTIAL`: Service capabilities restricted (number of transactions, maximum amount...)\nbased on risk management policy.\n- `NONE`: No service available.\n",
         "type": "string",
-        "enum": ["FULL", "PARTIAL", "NONE"],
+        "enum": [
+          "FULL",
+          "PARTIAL",
+          "NONE"
+        ],
         "example": "FULL"
       },
       "VerificationStatus": {
         "description": "Registration person type:\n- `PENDING`: Waiting for additional content (document, information).\n- `CHECKING`: Checking transmitted content.\n- `CHECKED`: Transmitted content validated.\n- `REJECTED`: transmited content was rejected (inconsistent or unusable\nbecause can’t be analysed).\n",
         "type": "string",
-        "enum": ["PENDING", "CHECKING", "CHECKED", "REJECTED"],
+        "enum": [
+          "PENDING",
+          "CHECKING",
+          "CHECKED",
+          "REJECTED"
+        ],
         "example": "PENDING"
       },
       "DocumentType": {
@@ -3782,7 +3991,12 @@
             "type": "number"
           }
         },
-        "required": ["size", "total_elements", "total_pages", "number"],
+        "required": [
+          "size",
+          "total_elements",
+          "total_pages",
+          "number"
+        ],
         "example": {
           "size": "100",
           "total_elements": "1215",
@@ -3819,7 +4033,10 @@
             "maxLength": 140
           }
         },
-        "required": ["error", "error_description"],
+        "required": [
+          "error",
+          "error_description"
+        ],
         "example": {
           "error": "PARAMETER_MISSING",
           "error_description": "Missing request header 'X-FWD-Request-ID' for method parameter of type String",
@@ -4192,7 +4409,7 @@
       "TermsBody": {
         "name": "terms_body",
         "in": "query",
-        "description": "Terms and conditions page body customized value using markdown syntax.\nTo link static terms and conditions page, use\n`[link description](https://link.destination)`.\n> Customization not available if you are using Linxo Connect agreement.\n\n> When using your agreement, if not set we won't display terms page. As\n> a consequence, you won't have access to following capabilities:\n> - Ask user to register IBAN.\n> - Display a QR Code on non mobile device if AppToApp flow is\n> supported by the bank.\n",
+        "description": "Terms and conditions page body customized value using markdown syntax.\nTo link static terms and conditions page, use\n`[link description](https://link.destination)`.\n> Customization not available if you are using Linxo Connect agreement.\n\n> When using your agreement, if not set we won't display terms page. As\n> a consequence, you won't have access to folowing capabilities:\n> - Ask user to register IBAN.\n> - Display a QR Code on non mobile device if AppToApp flow is\n> supported by the bank.\n",
         "required": false,
         "example": "De transmettre votre IBAN à Linxo Connect.%20%20%0ALes [conditions générales de Linxo Connect Payments](https://pay.oxlin.io/v1/terms?locale=fr).\n",
         "schema": {
@@ -4211,7 +4428,30 @@
           "maxLength": 512
         }
       },
-      "InstantPaymentFooter": {
+      "InstantPaymentText": {
+        "name": "instant_payment_text",
+        "in": "query",
+        "description": "Instant payment feature page header customized value using markdown syntax.\n> Customization not available if you are using Linxo Connect agreement.\n",
+        "required": false,
+        "example": "En choisissant de réaliser un virement instantané...\n",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "SinglePaymentText": {
+        "name": "single_payment_text",
+        "in": "query",
+        "description": "Instant payment feature page header customized value using markdown syntax.\n> Customization not available if you are using Linxo Connect agreement.\n",
+        "required": false,
+        "example": "Réaliser un virement standard...\n",
+        "schema": {
+          "type": "string",
+          "maxLength": 128
+        }
+      },
+      "InstantPaymentFooterDeprecated": {
+        "deprecated": true,
         "name": "instant_payment_footer",
         "in": "query",
         "description": "Instant payment feature page footer customized value using markdown syntax.\n> Customization not available if you are using Linxo Connect agreement.\n",
@@ -4302,7 +4542,10 @@
         "example": "LARGE",
         "schema": {
           "type": "string",
-          "enum": ["SMALL", "LARGE"],
+          "enum": [
+            "SMALL",
+            "LARGE"
+          ],
           "default": "LARGE"
         }
       },
