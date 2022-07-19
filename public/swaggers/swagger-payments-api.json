@@ -3626,7 +3626,10 @@
             "SEPA": "#/components/schemas/SEPAPayerAccountItem",
             "FPS": "#/components/schemas/FPSAccountItem"
           }
-        }
+        },
+        "required": [
+          "schema"
+        ]
       },
       "AuthorizedAccountIdentification": {
         "oneOf": [
@@ -3643,7 +3646,10 @@
             "SEPA": "#/components/schemas/SEPAAuthorizedAccountItem",
             "FPS": "#/components/schemas/FPSAuthorizedAccountItem"
           }
-        }
+        },
+        "required": [
+          "schema"
+        ]
       },
       "AuthorizedAccountEntity": {
         "oneOf": [
@@ -3660,7 +3666,10 @@
             "NATURAL_PERSON": "#/components/schemas/AuthorizedAccountNaturalPerson",
             "COMPANY": "#/components/schemas/AuthorizedAccountCompany"
           }
-        }
+        },
+        "required": [
+          "type"
+        ]
       },
       "Payer": {
         "oneOf": [
@@ -3681,7 +3690,10 @@
             "FPS": "#/components/schemas/FPSAccountItem",
             "ALIAS": "#/components/schemas/AliasReferenceItem"
           }
-        }
+        },
+        "required": [
+          "schema"
+        ]
       },
       "Beneficiary": {
         "description": "Beneficiary account for instructed payments.",
@@ -3703,7 +3715,10 @@
             "FPS": "#/components/schemas/FPSAccountItem",
             "ALIAS": "#/components/schemas/AliasReferenceItem"
           }
-        }
+        },
+        "required": [
+          "schema"
+        ]
       },
       "AccountItem": {
         "description": "Common structure fo all accounts identification item.\n",
@@ -4200,7 +4215,10 @@
             "REGULATED_ENTITY": "#/components/schemas/RegulatedEntity",
             "ASSOCIATION": "#/components/schemas/Association"
           }
-        }
+        },
+        "required": [
+          "type"
+        ]
       },
       "LocationItem": {
         "description": "Locate the URL .\n",
