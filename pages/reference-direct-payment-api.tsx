@@ -10,6 +10,16 @@ const Redoc: NextPage = () => {
         specUrl="/swaggers/swagger-payments-api.json"
         options={{
           nativeScrollbars: true,
+          theme: {
+            typography: {
+              fontFamily: 'var(--ifm-font-family-base)',
+              headings: {
+                fontFamily: '"HK Grotesk", system-ui',
+                fontWeight: "500",
+                lineHeight: "1.6em",
+              },
+            },
+          },
         }}
       />
     </Layout>
