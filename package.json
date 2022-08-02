@@ -8,13 +8,13 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "core-js": "3.23.3",
+    "core-js": "3.23.5",
     "dotenv-flow": "3.2.0",
     "mobx": "6.6.1",
-    "next": "12.1.6",
+    "next": "12.2.3",
     "react": "17.0.2",
     "react-dom": "17.0.2",
-    "redoc": "2.0.0-rc.72",
+    "redoc": "2.0.0-rc.74",
     "redox": "0.1.1",
     "styled-components": "5.3.5"
   },
