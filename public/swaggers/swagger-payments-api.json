@@ -2,8 +2,8 @@
   "openapi": "3.0.0",
   "info": {
     "title": "Linxo Connect Payments API",
-    "version": "1.3.1",
-    "description": "# Presentation\n\n## Introduction\n\nLinxo Connect Payments API provides you an easy way to initiate a payment from\npayer PSU account to any beneficiary account. Payment initiation can be\nsubdivided in three major steps:\n1. Create an authentication using [POST /token](oxlin-payments-api.html#operation/postToken).\n2. Create `order` using [POST /orders](oxlin-payments-api.html#operation/postOrder).\n3. Redirect the payer to the URL in [orders.auth_url](oxlin-payments-api.html#operation/getAuthorize).\n4. At the end of the consent flow, payer is redirect to\n`orders.redirect_url`, you will get the payment result using\n[GET /running/orders](oxlin-payments-api.html#operation/getRunningOrder)\nto get `orders.order_status` and\n`orders.instructions.payments.status`.\n\nHere it is, if clear enough, we will deep into payment technical integration\nworkflow.\n\n> `orders` is the central object you will manipulate during the entire\n> payment lifecycle. It represent the unique consent the payer gave to\n> its bank to initiate one or multiple payments, recurring or not to\n> one or multiple beneficiaries.\n\n## How to test using Sandbox Mode\n\nIn order to simplify your evaluation and your integration of Linxo Connect Payments,\nwe provide a `Sandbox Mode` giving you a way to emulate payment. To use it,\nyou only have to use `Sandbox Mode` credentials. Only credentials\n(identifier and password) are different between `Sandbox Mode` and\n`Production Mode`, all URL and objects are unchanged.\n\n> When receiving your `client identifier` and `client password` from Oxlin,\n> be sure to remember if they are the one used for `Sandbox Mode` or\n> for `Production Mode`.\n\nTo emulate a payment using sandbox mode credentials, simply:\n- Use IBAN `FR8530003000307599775722N09` as `beneficiary.iban`.\n- Use any name as `beneficiary.name`.\n- Choose any bank from bank selection screen, it will redirect you to a\nbank emulation page.\n- From bank emulation page, you can also emulate the case where the\nredirection to your `redirect_url` doesn't works.\n\n> For payment using `Sandbox Mode`, you have to use\n> `FR8530003000307599775722N09` as `beneficiary.iban` and any value\n> as `beneficiary.name`. When bank will be chosen, bank emulation page\n> will give you following choices:\n> - `AUTHORIZED` will emulate an order authorised but not yet executed by the\n> bank (order AUTHORIZED and payment SUBMITTED).\n> - `EXECUTED` will emulate a payment immediately executed by the bank\n> (order CLOSED and payment EXECUTED).\n> - `REJECTED` will emulate a payment with order refused by the bank\n> (order REJECTED and no payment).\n> - `FAILED` will emulate a payment with order in technical error\n> (order FAILED and no payment).\n> - `EXPIRED` will emulate a payment with order expired\n> (order EXPIRED  and no payment).\n> - `AUTHORIZED` then `EXECUTED` (with delay) will emulate a real payment flow\n> where the bank authorise it in a first time and execute it with a\n> 2 minutes delay in a second time.\n> (order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n> - `AUTHORIZED and REJECTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and reject it with a\n> 2 minutes delay in a second time\n> (order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\nTo emulate a payment with known payer using sandbox mode, you need to use\none of folowing value for `payer.iban`:\n- `FR9530003000708915516426B35` will : result in an authorized payment\n(order AUTHORIZED and payment SUBMITTED).\n- `FR2130003000302667332151D75` will result in a rejected payment\n(order REJECTED and no payment).\n- `FR5830003000304588896864Y78` will result in a failed payment\n(order FAILED and no payment).\n- `FR4730003000505378875264Q21` will result in a expired payment\n(order EXPIRED  and no payment).\n- `FR4830003000303864238885L38` will result in an executed payment\n(order CLOSED and payment EXECUTED).\n- `FR1030003000505644812371I38` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become executed\n(order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n- `FR9030003000304347365769U57` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become rejected\n(order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\n## Technical integration workflow\n\nAt a technical point of view, initiating a payment will affect four actors:\n- `Customer`: is the payer who have to consent the payment initiation.\n- `Integrator`: it is you as a technical actor who have a commercial relationship\nwith the `Customer`.\n- `Oxlin`: Linxo Connect Payments API provider is the regulated TPP (Third Party Payment\nService Providers) under PSD2 (Revised Payment Services Directive) that is in\ncharge of initiating a payment for your `Customer`.\n- `Bank`: payer bank that is in charge under PSD2 (Revised Payment Services\nDirective) to authenticate the payer in order to confirm the payment initiation\nrequest.\n\nFor all type of payments (single or multiple, recurring or not, to one or multiple\nbeneficiaries) you have to follow `order` creation flow:\n\n<center><img src=\"../images/linxo_connect_payments_integration.png\" alt=\"Payment flow\" title=\"Payment flow\" width=\"500px\" /></center>\n\n> **iFrame integration**: even if Linxo Connect Payments page can be integrated in an iFrame on your side,\nbanks authentication page prevent iFrame integration. It is why, even if you integrate\nLinxo Connect Payments in an iFrame, starting bank authentication flow will redirect you to the\nbank side replacing current web context to the bank context. At the end of the authentication\nflow, we will go back to the `redirect_url` in charge opening back your application context.\n\n## Order and Payment lifecycle\n\n<center><img src=\"../images/order-status.png\" alt=\"Order status\" title=\"Order status\" width=\"400px\" /></center>\n\n`order` represent payer consent and define two main categories of states:\n1. Intermediary states:\n  * `NEW`: initial state, order was created but payer wasn't asked to\n  give its consent. In that state, you have to redirect payer to `order.auth_url`\n  in order to request it's consent.\n  * `AUTHORIZED`: payer was redirect to `order.auth_url` and successfully\n  authenticate to its bank. When `AUTHORIZED`, the `order` can define payments,\n  depending on payments `start_date`. `order` will remain in `AUTHORIZED`\n  until there is not any pending payments for it.\n2. Final states:\n  * `CLOSED`: as soon as all instructed payments of an order are in a final state,\n  its status change to `CLOSED` indicating `order` was successfully authenticated,\n  payments were realized (successfully or not) and it doesn't remain any possible\n  action for concerned `order`.\n  * `REJECTED`: payer authentication was refused, `order` wasn't authorized and is in\n  a final state without instructing any payment.\n  * `FAILED`: payer authentication failed due to technical considerations, `order`\n  wasn't authorized and is in a final state without instructing any payment.\n  * `EXPIRED`: an `order` in status `NEW` expires automaticaly after 30 days.\n\n<center><img src=\"../images/payment-status.png\" alt=\"Payment status\" title=\"Payment status\" width=\"500px\" /></center>\n\nFrom its status `AUTHORIZED`, `order` instructions can produce payments whose\nstatus are divided in the same two categories:\n1. Intermediary states:\n  * `SUBMITTED`: payment was transmitted and confirmed to the bank. Execution is in\n  progress on the bank side.\n2. Final states:\n  * `EXECUTED`: `SUBMITTED` payment was executed from the bank side and funds are\n  available for the beneficiary. Please note there exist cases such instant\n  payment execution where a payment will appear directly in `EXECUTED` without\n  transition from `SUBMITTED` one.\n  * `CANCELLED`: when you close an `AUTHORIZED` order before all instructed payments\n  were `EXECUTED`, pending payments are moved to `CANCELLED` state.\n  * `REJECTED`: `SUBMITTED` payment that was rejected either by payer bank, either\n  by beneficiary bank.\n\n### STATUS:\nThe Order is in the `NEW` state when the `order` is created.\n\nAfter the bank returns, the `ORDER` changes to `AUTHORIZED` status if the authentication \nis accepted by the bank (which means that the payer has been successfully redirected \nto his bank and has validated the transfer request).\nAt this moment, the payment change to `SUBMITTED` status – (intermediate status) - The\npayment is still being processed by the bank, so there is still a small probability \nat this moment that it will finally be declined by the bank.\n\nThen when the payment is finalized by the bank, the `ORDER` changes to `CLOSED` status \nand the payment to `EXECUTED` status, (Final status ) - the payment has been executed \non the bank's side and the funds are available to the beneficiary.\n\nOnly from this status the payment is irrevocable.\n\nYou can base your decision on the intermediate statuses (`AUTHORIZED` and `SUBMITTED`) which\nvalidate that the client has validated the transfer, but this status should not yet be considered\nas a guarantee of irrevocability of the payment.\n\n### Concerning the delay between the statuses of the `order`:\nFrom the `NEW` status to the `AUTHORIZED` status, the delay corresponds as soon as the customer \nreturns his authentication to his bank.\n\nNote that when you create a payment `order`, it is valid for 30 days\nFrom the moment your customer has clicked on the link and is redirected to his bank, he has 15 minutes\nto authenticate himself, otherwise it goes to the state EXPIRED.\n\n# Technicals considerations\n\n## Errors\n\nThe API uses conventional HTTP response codes to indicate the success or\nfailure of an API request. In general, codes in the 2xx range indicate\nsuccess, codes in the 4xx range indicate an error that fails given the\ninformation provided (e.g., a required parameter was omitted), and codes in\nthe 5xx range indicate an error with our services.\n\nHowever, not all errors map cleanly onto HTTP response codes. When a request\nis valid but does not complete successfully (e.g., an asynchronous\noperation), we return a 402 error code.\n\nAll of the error responses contain the same structure in the body:\n\n| Attribute name      | Description                                        |\n|---------------------|----------------------------------------------------|\n| `error`             | Error code (can be used to manage error on the client). |\n| `error_description` | Human readable english text that describes the error (can be used in logs). |\n| `id`                | Identifies the resource (when applicable). |\n\nExample:\n```\n{\n  \"error\": \"PARAMETER_MISSING\",\n  \"error_description\": \"Missing request header 'X-FWD-Request-ID' for method parameter of type String\",\n  \"id\": \"/v1/accounts\"\n}\n```\n\n## Pagination\n\nWhen the API return a list of elements, the results are paginated.\nBy default the lists is limited to return a result limit of 100 elements\nand are explored on page 1. Calling `GET /xxx` or\n`GET /xxx?page=1&limit=100` will return the same results.\n\nTo help you navigate through the results contained in the JSON responses, we\nprovide `_links` and `_page`properties that let you know where you are in\nthe pagination according following elements:\n- **self** : <https://domain/Resources?page=X&limit=Y>\n- first page : <https://domain/Resources?page=X&limit=Y>\n- last page : <https://domain/Resources?page=X&limit=Y>\n- next page : <https://domain/Resources?page=X&limit=Y>\n- previous page : <https://domain/Resources?page=X&limit=Y>\n- size: <number of elements in the current page>\n- total_elements: <total number of elements>\n- total_pages: <total number of pages>\n- number: <current page number>\n\n`self`, `size`, `total_elements`, `total_pages` and `number` properties are\nmandatories and returned in both paginated and not paginated results. Other\nproperties are only returned on paginated result.\n\nAs an example, you have 1215 `orders`. You call `GET /v1/running/orders` without\npagination parameters, we return 100 and there are still 1115 to explore.\nWe therefore send the following elements in the answer body:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=2&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 1\n  }\n}\n```\n\nAnd if you call the page number 7 `GET /v1/running/orders`:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=7&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=8&limit=100\"\n  },\n  \"prev\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=6&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 7\n  }\n}\n```\n\n## Versioning\n\nThe API is following the semantic versioning (major.minor). The version is\nlocated in the URL, patches on the same version endpoint are\nbackward-compatible.\n\nA minor release can add new resources, parameters or properties. A good\npractice for a client implementation is to design the implementation to\nsupport minor changes.\n\nThe patch releases are not visible to the clients since they are not\nchanging the contract.\n\n## Versions history\n\n1.3.1:\n- Deprecate `providers_header` following Linxo Connect rebranding.\n- Deprecate `terms_footer` following Linxo Connect rebranding.\n- Update `button_radius` default value to `5` following Linxo Connect rebranding.\n- Correct order request and response to have `complementary_name` for every account types.\n- Update default value for `button_alignment` and `button_size`\n- Remove versions history older than 1.2.0\n\n1.3.0:\n- Add method `POST /v1/authorized_accounts`.\n- Add method `GET /v1/authorized_accounts/{authorized_account_id}`.\n- Add method `DELETE /v1/authorized_accounts/{authorized_account_id}`.\n- Add method `GET /v1/authorized_accounts`.\n\n1.2.2:\n- Add `InstantPaymentText` and `SinglePaymentText`.\n- Deprecate `InstantPaymentFooter` following Linxo Connect rebranding\n\n1.2.1:\n- Update documentation on sandbox mode.\n- Update documentation on `favorite_providers`.\n\n1.2.0:\n- Add `instant_payment_header`, `instant_payment_footer`,\n`providers_header` and `providers_search_hint` options on\n`GET /v1/authorize/{order_id}`.\n"
+    "version": "1.3.6",
+    "description": "# Presentation\n\n## Introduction\n\nLinxo Connect Payments API provides you an easy way to initiate a payment from\npayer PSU account to any beneficiary account. Payment initiation can be\nsubdivided in three major steps:\n1. Create an authentication using [POST /token](oxlin-payments-api.html#operation/postToken).\n2. Create `order` using [POST /orders](oxlin-payments-api.html#operation/postOrder).\n3. Redirect the payer to the URL in [orders.auth_url](oxlin-payments-api.html#operation/getAuthorize).\n4. At the end of the consent flow, payer is redirect to\n`orders.redirect_url`, you will get the payment result using\n[GET /running/orders](oxlin-payments-api.html#operation/getRunningOrder)\nto get `orders.order_status` and\n`orders.instructions.payments.status`.\n\nHere it is, if clear enough, we will deep into payment technical integration\nworkflow.\n\n> `orders` is the central object you will manipulate during the entire\n> payment lifecycle. It represent the unique consent the payer gave to\n> its bank to initiate one or multiple payments, recurring or not to\n> one or multiple beneficiaries.\n\n## How to test using Sandbox Mode\n\nIn order to simplify your evaluation and your integration of Linxo Connect Payments,\nwe provide a `Sandbox Mode` giving you a way to emulate payment. To use it,\nyou only have to use `Sandbox Mode` credentials. Only credentials\n(identifier and password) are different between `Sandbox Mode` and\n`Production Mode`, all URL and objects are unchanged.\n\n> When receiving your `client identifier` and `client password` from Oxlin,\n> be sure to remember if they are the one used for `Sandbox Mode` or\n> for `Production Mode`.\n\nTo emulate a payment using sandbox mode credentials, simply:\n- Use IBAN `FR8530003000307599775722N09` as `beneficiary.iban`.\n- Use any name as `beneficiary.name`.\n- Choose any bank from bank selection screen, it will redirect you to a\nbank emulation page.\n- From bank emulation page, you can also emulate the case where the\nredirection to your `redirect_url` doesn't works.\n\n> For payment using `Sandbox Mode`, you have to use\n> `FR8530003000307599775722N09` as `beneficiary.iban` and any value\n> as `beneficiary.name`. When bank will be chosen, bank emulation page\n> will give you following choices:\n> - `AUTHORIZED` will emulate an order authorised but not yet executed by the\n> bank (order AUTHORIZED and payment SUBMITTED).\n> - `EXECUTED` will emulate a payment immediately executed by the bank\n> (order CLOSED and payment EXECUTED).\n> - `REJECTED` will emulate a payment with order refused by the bank\n> (order REJECTED and no payment).\n> - `FAILED` will emulate a payment with order in technical error\n> (order FAILED and no payment).\n> - `EXPIRED` will emulate a payment with order expired\n> (order EXPIRED  and no payment).\n> - `AUTHORIZED` then `EXECUTED` (with delay) will emulate a real payment flow\n> where the bank authorise it in a first time and execute it with a\n> 2 minutes delay in a second time.\n> (order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n> - `AUTHORIZED and REJECTED (with delay)` will emulate a real payment flow\n> where the bank authorise it in a first time and reject it with a\n> 2 minutes delay in a second time\n> (order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\nTo emulate a payment with known payer using sandbox mode, you need to use\none of folowing value for `payer.iban`:\n- `FR9530003000708915516426B35` will : result in an authorized payment\n(order AUTHORIZED and payment SUBMITTED).\n- `FR2130003000302667332151D75` will result in a rejected payment\n(order REJECTED and no payment).\n- `FR5830003000304588896864Y78` will result in a failed payment\n(order FAILED and no payment).\n- `FR4730003000505378875264Q21` will result in a expired payment\n(order EXPIRED  and no payment).\n- `FR4830003000303864238885L38` will result in an executed payment\n(order CLOSED and payment EXECUTED).\n- `FR1030003000505644812371I38` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become executed\n(order AUTHORIZED and payment SUBMITTED → order CLOSED and payment EXECUTED).\n- `FR9030003000304347365769U57` will result in an authorized payment during\na 2 minutes delay and then after this delay the payment become rejected\n(order AUTHORIZED and payment SUBMITTED → order REJECTED and payment REJECTED).\n\n## Technical integration workflow\n\nAt a technical point of view, initiating a payment will affect four actors:\n- `Customer`: is the payer who have to consent the payment initiation.\n- `Integrator`: it is you as a technical actor who have a commercial relationship\nwith the `Customer`.\n- `Oxlin`: Linxo Connect Payments API provider is the regulated TPP (Third Party Payment\nService Providers) under PSD2 (Revised Payment Services Directive) that is in\ncharge of initiating a payment for your `Customer`.\n- `Bank`: payer bank that is in charge under PSD2 (Revised Payment Services\nDirective) to authenticate the payer in order to confirm the payment initiation\nrequest.\n\nFor all type of payments (single or multiple, recurring or not, to one or multiple\nbeneficiaries) you have to follow `order` creation flow:\n\n<center><img src=\"../images/linxo_connect_payments_integration.png\" alt=\"Payment flow\" title=\"Payment flow\" width=\"500px\" /></center>\n\n> **iFrame integration**: even if Linxo Connect Payments page can be integrated in an iFrame on your side,\nbanks authentication page prevent iFrame integration. It is why, even if you integrate\nLinxo Connect Payments in an iFrame, starting bank authentication flow will redirect you to the\nbank side replacing current web context to the bank context. At the end of the authentication\nflow, we will go back to the `redirect_url` in charge opening back your application context.\n\n## Order and Payment lifecycle\n\n<center><img src=\"../images/order-status.png\" alt=\"Order status\" title=\"Order status\" width=\"400px\" /></center>\n\n`order` represent payer consent and define two main categories of states:\n1. Intermediary states:\n  * `NEW`: initial state, order was created but payer wasn't asked to\n  give its consent. In that state, you have to redirect payer to `order.auth_url`\n  in order to request it's consent.\n  * `AUTHORIZED`: payer was redirect to `order.auth_url` and successfully\n  authenticate to its bank. When `AUTHORIZED`, the `order` can define payments,\n  depending on payments `start_date`. `order` will remain in `AUTHORIZED`\n  until there is not any pending payments for it.\n2. Final states:\n  * `CLOSED`: as soon as all instructed payments of an order are in a final state,\n  its status change to `CLOSED` indicating `order` was successfully authenticated,\n  payments were realized (successfully or not) and it doesn't remain any possible\n  action for concerned `order`.\n  * `REJECTED`: payer authentication was refused, `order` wasn't authorized and is in\n  a final state without instructing any payment.\n  * `FAILED`: payer authentication failed due to technical considerations, `order`\n  wasn't authorized and is in a final state without instructing any payment.\n  * `EXPIRED`: an `order` in status `NEW` expires automaticaly after 30 days.\n\n<center><img src=\"../images/payment-status.png\" alt=\"Payment status\" title=\"Payment status\" width=\"500px\" /></center>\n\nFrom its status `AUTHORIZED`, `order` instructions can produce payments whose\nstatus are divided in the same two categories:\n1. Intermediary states:\n  * `SUBMITTED`: payment was transmitted and confirmed to the bank. Execution is in\n  progress on the bank side.\n2. Final states:\n  * `EXECUTED`: `SUBMITTED` payment was executed from the bank side and funds are\n  available for the beneficiary. Please note there exist cases such instant\n  payment execution where a payment will appear directly in `EXECUTED` without\n  transition from `SUBMITTED` one.\n  * `CANCELLED`: when you close an `AUTHORIZED` order before all instructed payments\n  were `EXECUTED`, pending payments are moved to `CANCELLED` state.\n  * `REJECTED`: `SUBMITTED` payment that was rejected either by payer bank, either\n  by beneficiary bank.\n\n### STATUS:\nThe Order is in the `NEW` state when the `order` is created.\n\nAfter the bank returns, the `ORDER` changes to `AUTHORIZED` status if the authentication \nis accepted by the bank (which means that the payer has been successfully redirected \nto his bank and has validated the transfer request).\nAt this moment, the payment change to `SUBMITTED` status – (intermediate status) - The\npayment is still being processed by the bank, so there is still a small probability \nat this moment that it will finally be declined by the bank.\n\nThen when the payment is finalized by the bank, the `ORDER` changes to `CLOSED` status \nand the payment to `EXECUTED` status, (Final status ) - the payment has been executed \non the bank's side and the funds are available to the beneficiary.\n\nOnly from this status the payment is irrevocable.\n\nYou can base your decision on the intermediate statuses (`AUTHORIZED` and `SUBMITTED`) which\nvalidate that the client has validated the transfer, but this status should not yet be considered\nas a guarantee of irrevocability of the payment.\n\n### Concerning the delay between the statuses of the `order`:\nFrom the `NEW` status to the `AUTHORIZED` status, the delay corresponds as soon as the customer \nreturns his authentication to his bank.\n\nNote that when you create a payment `order`, it is valid for 30 days\nFrom the moment your customer has clicked on the link and is redirected to his bank, he has 1 hour\nto authenticate himself, otherwise it goes to the state EXPIRED.\n\n# Technicals considerations\n\n## Errors\n\nThe API uses conventional HTTP response codes to indicate the success or\nfailure of an API request. In general, codes in the 2xx range indicate\nsuccess, codes in the 4xx range indicate an error that fails given the\ninformation provided (e.g., a required parameter was omitted), and codes in\nthe 5xx range indicate an error with our services.\n\nHowever, not all errors map cleanly onto HTTP response codes. When a request\nis valid but does not complete successfully (e.g., an asynchronous\noperation), we return a 402 error code.\n\nAll of the error responses contain the same structure in the body:\n\n| Attribute name      | Description                                        |\n|---------------------|----------------------------------------------------|\n| `error`             | Error code (can be used to manage error on the client). |\n| `error_description` | Human readable english text that describes the error (can be used in logs). |\n| `id`                | Identifies the resource (when applicable). |\n\nExample:\n```\n{\n  \"error\": \"PARAMETER_MISSING\",\n  \"error_description\": \"Missing request header 'X-FWD-Request-ID' for method parameter of type String\",\n  \"id\": \"/v1/accounts\"\n}\n```\n\n## Pagination\n\nWhen the API return a list of elements, the results are paginated.\nBy default the lists is limited to return a result limit of 100 elements\nand are explored on page 1. Calling `GET /xxx` or\n`GET /xxx?page=1&limit=100` will return the same results.\n\nTo help you navigate through the results contained in the JSON responses, we\nprovide `_links` and `_page`properties that let you know where you are in\nthe pagination according following elements:\n- **self** : <https://domain/Resources?page=X&limit=Y>\n- first page : <https://domain/Resources?page=X&limit=Y>\n- last page : <https://domain/Resources?page=X&limit=Y>\n- next page : <https://domain/Resources?page=X&limit=Y>\n- previous page : <https://domain/Resources?page=X&limit=Y>\n- size: <number of elements in the current page>\n- total_elements: <total number of elements>\n- total_pages: <total number of pages>\n- number: <current page number>\n\n`self`, `size`, `total_elements`, `total_pages` and `number` properties are\nmandatories and returned in both paginated and not paginated results. Other\nproperties are only returned on paginated result.\n\nAs an example, you have 1215 `orders`. You call `GET /v1/running/orders` without\npagination parameters, we return 100 and there are still 1115 to explore.\nWe therefore send the following elements in the answer body:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=2&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 1\n  }\n}\n```\n\nAnd if you call the page number 7 `GET /v1/running/orders`:\n\n```\n{\n\"_links\": {\n  \"self\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=7&limit=100\"\n  },\n  \"first\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=1&limit=100\"\n  },\n  \"last\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=13&limit=100\"\n  },\n  \"next\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=8&limit=100\"\n  },\n  \"prev\": {\n    \"href\": \"https://pay.oxlin.io/v1/orders?page=6&limit=100\"\n  },\n\"_page\": {\n  \"size\": 100,\n  \"total_elements\": 1215,\n  \"total_pages\": 13,\n  \"number\": 7\n  }\n}\n```\n\n## Versioning\n\nThe API is following the semantic versioning (major.minor). The version is\nlocated in the URL, patches on the same version endpoint are\nbackward-compatible.\n\nA minor release can add new resources, parameters or properties. A good\npractice for a client implementation is to design the implementation to\nsupport minor changes.\n\nThe patch releases are not visible to the clients since they are not\nchanging the contract.\n\n## Versions history\n\n1.3.6\n- Correct `payment_status` by `status` in the `Returns a list of orders` endpoint example\n- Update documentation to clarify that `frequency` field, `STANDING_ORDERS` and `BATCH_PAYMENTS` capabilities are currently **NOT SUPPORTED**\n\n1.3.5\n- Authorized accounts: National identification for France is SIRET.\n- Authorized accounts: Sandbox documentation\n\n1.3.4\n- Add method `GET /v1/reporting/orders/{order_id}/history`.\n- Add filters in method `GET /v1/reporting/orders/` (data for searching orders, amount from and to, currency).\n\n1.3.3\n- Add `sca.applied` in order response providing if a SCA exemption has been applied by the provider.\n- Add `channel` in order response providing the initiating channel for the order.\n- Add `country` in order response for payer and beneficiaries providing the accounts country.\n\n1.3.2\n- Add `name` in order response to return the name of the payer.\n- Add `payments.payment_status_raw_reason` in order response to return the provider rejected reason\n- Remove required attribute on `payments.execution_date` field\n- Remove `history` from orders\n\n1.3.1:\n- Deprecate `providers_header` following Linxo Connect rebranding.\n- Deprecate `terms_footer` following Linxo Connect rebranding.\n- Update `button_radius` default value to `5` following Linxo Connect rebranding.\n- Correct order request and response to have `complementary_name` for every account types.\n- Update default value for `button_alignment` and `button_size`\n- Remove versions history older than 1.2.0\n\n1.3.0:\n- Add method `POST /v1/authorized_accounts`.\n- Add method `GET /v1/authorized_accounts/{authorized_account_id}`.\n- Add method `DELETE /v1/authorized_accounts/{authorized_account_id}`.\n- Add method `GET /v1/authorized_accounts`.\n\n1.2.2:\n- Add `InstantPaymentText` and `SinglePaymentText`.\n- Deprecate `InstantPaymentFooter` following Linxo Connect rebranding\n\n1.2.1:\n- Update documentation on sandbox mode.\n- Update documentation on `favorite_providers`.\n\n1.2.0:\n- Add `instant_payment_header`, `instant_payment_footer`,\n`providers_header` and `providers_search_hint` options on\n`GET /v1/authorize/{order_id}`.\n"
   },
   "servers": [
     {
@@ -17,60 +17,9 @@
     }
   ],
   "paths": {
-    "/token": {
-      "post": {
-        "tags": [
-          "Authorization"
-        ],
-        "summary": "Get an OAuth2 authorization bearer.\n",
-        "operationId": "postToken",
-        "security": [
-          {
-            "BasicAuth": []
-          }
-        ],
-        "description": "API access is protected using OAuth2 client credential flow. As a consequence, to use the API\nyou need to:\n1. Request an authorization bearer using that `/token` method,\n2. Get `access_token` value in the response body and pass it in the `Authorization`\nheader of the protected methods you need to access to.\n",
-        "parameters": [
-          {
-            "$ref": "#/components/parameters/BasicAuthorization"
-          }
-        ],
-        "requestBody": {
-          "description": "Token creation description.\n",
-          "required": true,
-          "content": {
-            "application/x-www-form-urlencoded": {
-              "schema": {
-                "$ref": "#/components/schemas/TokenCreate"
-              }
-            }
-          }
-        },
-        "responses": {
-          "200": {
-            "description": "Created token.\n",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "$ref": "#/components/schemas/TokenItem"
-                }
-              }
-            }
-          },
-          "400": {
-            "$ref": "#/components/responses/400"
-          },
-          "401": {
-            "$ref": "#/components/responses/401"
-          }
-        }
-      }
-    },
     "/v1/orders": {
       "post": {
-        "tags": [
-          "Payment orders"
-        ],
+        "tags": ["Payment orders"],
         "summary": "Create an order.\n",
         "operationId": "postOrder",
         "description": "Create an order representing one or more payments, today or in the\nfuture to a unique beneficiary or multiples beneficiaries. An order\nis associated to a unique payment initiation, as a consequence it\nis associated to a unique authentication from the PSU bank.\n\nNote the order is valid during a 30 days period. After that delay,\nit will expire automatically and you can't use it anymore.\n",
@@ -364,9 +313,7 @@
     },
     "/v1/authorize/{order_id}": {
       "get": {
-        "tags": [
-          "Payment orders"
-        ],
+        "tags": ["Payment orders"],
         "summary": "Start authorisation flow for an order.\n",
         "security": [],
         "operationId": "getAuthorize",
@@ -562,9 +509,7 @@
     },
     "/v1/running/orders/{order_id}": {
       "get": {
-        "tags": [
-          "Payment orders"
-        ],
+        "tags": ["Payment orders"],
         "summary": "Get a specific order for realtime access.\n",
         "operationId": "getRunningOrder",
         "description": "Retrieve a specific order based on its unique identifier for realtime access.\nAs a consequence, **can only be used to get an `orders` during the realtime flow**\nmeans **while order is in its initial state `NEW` and during the next 10 minutes\nafter it was updated to another status**. The method have to be only used for\nhigh availability services, if it doesn't return any `orders`, you are probably\nusing the wrong method and have to deep into using `GET v1/reporting/orders/XXX`.\n\nEach order represent one or more payments,\ntoday or in the future, to a unique beneficiary or multiples\nbeneficiaries. An order is associated to one or more instructions but to a\nunique payment initiation at the bank side, as a consequence it is associated\nto a unique authentication from the PSU bank.\n",
@@ -828,9 +773,7 @@
         }
       },
       "put": {
-        "tags": [
-          "Payment orders"
-        ],
+        "tags": ["Payment orders"],
         "summary": "Update a specific order.\n",
         "operationId": "putOrder",
         "description": "Update a specific order based on its unique identifier. It is possible\nto update:\n  - `order_status`: an order in status `NEW` or `AUTHORIZED` can be\n  changed to status `CLOSED`. In such case, order won't create any\n  new payments after status change, however existing payments status\n  won't change and are kept in current state.\n  - `bic`: you can change payer bank identification for an order in\n  status `NEW` with `order.bic` **undefined**.\n  - `email`: you can change payer email for an order in\n  status `NEW` with `orders.email` **undefined**.\n  - `selected_capability`: you can change payment used capability for an order in\n  status `NEW` with `orders.instructions.payments` **undefined**.\n  - `payer`: you can change payer account for an order in\n  status `NEW` with `order.payer` **undefined**.\n",
@@ -918,9 +861,7 @@
     },
     "/v1/reporting/orders/{order_id}": {
       "get": {
-        "tags": [
-          "Payment orders"
-        ],
+        "tags": ["Payment orders"],
         "summary": "Get a specific order.\n",
         "operationId": "getOrder",
         "description": "Retrieve a specific order based on its unique identifier.\nEach order represent one or more payments,\ntoday or in the future, to a unique beneficiary or multiples\nbeneficiaries. An order is associated to a unique payment initiation,\nas a consequence it is associated to a unique authentication from the\nPSU bank.\n",
@@ -1186,9 +1127,7 @@
     },
     "/v1/reporting/orders/": {
       "get": {
-        "tags": [
-          "Payment orders"
-        ],
+        "tags": ["Payment orders"],
         "summary": "Returns a list of orders.\n",
         "description": "Get the list of `orders`. Each order represents one or more payments,\ntoday or in the future, to a unique beneficiary or multiple\nbeneficiaries. An order is associated to a unique payment initiation,\nas a consequence it is associated to a unique authentication from the\nPSU bank.\n",
         "parameters": [
@@ -1218,6 +1157,18 @@
           },
           {
             "$ref": "#/components/parameters/UserReferenceParam"
+          },
+          {
+            "$ref": "#/components/parameters/DataForSearchingOrdersParam"
+          },
+          {
+            "$ref": "#/components/parameters/FromAmountParam"
+          },
+          {
+            "$ref": "#/components/parameters/ToAmountParam"
+          },
+          {
+            "$ref": "#/components/parameters/CurrencyParam"
           }
         ],
         "responses": {
@@ -1260,19 +1211,13 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": [
-                        "self"
-                      ]
+                      "required": ["self"]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": [
-                    "orders",
-                    "_links",
-                    "_page"
-                  ],
+                  "required": ["orders", "_links", "_page"],
                   "example": {
                     "orders": [
                       {
@@ -1319,7 +1264,7 @@
                             "label": "Payment from John Dupont to Jean Dupond",
                             "payments": [
                               {
-                                "payment_status": "SUBMITTED",
+                                "status": "SUBMITTED",
                                 "amount": "123.45",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-24T09:38:12+01:00",
@@ -1353,7 +1298,7 @@
                             "label": "Payment from John Dupont to Jean Dupond",
                             "payments": [
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "12",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-24T09:40:34+01:00",
@@ -1388,21 +1333,21 @@
                             "label": "Recurring payment from John Dupont to Jean Dupond",
                             "payments": [
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "33.33",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-01T00:00:00+01:00",
                                 "creation_date": "2020-01-27T12:23:12+01:00"
                               },
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "33.33",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-08T00:00:00+01:00",
                                 "creation_date": "2020-01-27T12:23:12+01:00"
                               },
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "33.33",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-15T00:00:00+01:00",
@@ -1436,7 +1381,7 @@
                             "label": "Payment from John Dupont to Jean Dupond",
                             "payments": [
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "45.65",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-24T09:43:25+01:00",
@@ -1455,7 +1400,7 @@
                             "label": "Payment from John Dupont to Jean Doe",
                             "payments": [
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "23.43",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-24T09:43:25+01:00",
@@ -1474,7 +1419,7 @@
                             "label": "Payment from John Dupont to John Jean",
                             "payments": [
                               {
-                                "payment_status": "EXECUTED",
+                                "status": "EXECUTED",
                                 "amount": "345",
                                 "currency": "EUR",
                                 "execution_date": "2020-01-24T09:43:25+01:00",
@@ -1525,11 +1470,102 @@
         }
       }
     },
+    "/v1/reporting/orders/{order_id}/history": {
+      "get": {
+        "tags": ["Payment orders"],
+        "summary": "Get the history of a specific order.\n",
+        "operationId": "getOrderHistory",
+        "description": "Retrieve a specific order based on its unique identifier.\nEach order represent one or more payments,\ntoday or in the future, to a unique beneficiary or multiples\nbeneficiaries. An order is associated to a unique payment initiation,\nas a consequence it is associated to a unique authentication from the\nPSU bank.\n",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/X-Request-ID"
+          },
+          {
+            "$ref": "#/components/parameters/BearerAuthorization"
+          },
+          {
+            "$ref": "#/components/parameters/OrderIdParam"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Requested order history.\n",
+            "headers": {
+              "X-Request-ID": {
+                "$ref": "#/components/headers/X-FWD-Request-ID"
+              }
+            },
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "history": {
+                      "description": "Describe the history of the order with an entry per order event. No information returned when order have no history.\n",
+                      "type": "array",
+                      "items": {
+                        "$ref": "#/components/schemas/OrderHistoryItem"
+                      }
+                    }
+                  }
+                },
+                "example": [
+                  {
+                    "date": "2022-12-07T16:19:07.600+0000",
+                    "method": "POST",
+                    "feature": "order",
+                    "status": 201,
+                    "type": "ApiHistoryItem"
+                  },
+                  {
+                    "date": "2022-12-07T16:19:07.652+0000",
+                    "content": "NONE->NEW",
+                    "type": "SimpleHistoryItem"
+                  },
+                  {
+                    "date": "2022-12-07T16:19:30.073+0000",
+                    "method": "PUT",
+                    "feature": "order",
+                    "status": 204,
+                    "type": "ApiHistoryItem"
+                  },
+                  {
+                    "date": "2022-12-07T16:19:35.308+0000",
+                    "method": "PUT",
+                    "feature": "order",
+                    "status": 204,
+                    "type": "ApiHistoryItem"
+                  },
+                  {
+                    "date": "2022-12-07T16:19:35.629+0000",
+                    "method": "GET",
+                    "feature": "authorize",
+                    "status": 201,
+                    "type": "ApiHistoryItem"
+                  },
+                  {
+                    "date": "2022-12-07T16:19:35.864+0000",
+                    "content": "NEW->CLOSED",
+                    "type": "SimpleHistoryItem"
+                  }
+                ]
+              }
+            }
+          },
+          "401": {
+            "$ref": "#/components/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/404"
+          },
+          "500": {
+            "$ref": "#/components/responses/500"
+          }
+        }
+      }
+    },
     "/v1/alias": {
       "post": {
-        "tags": [
-          "Account alias"
-        ],
+        "tags": ["Account alias"],
         "summary": "Create an alias.\n",
         "operationId": "postAlias",
         "description": "Create an account alias used to store account identification\nin order to be reused for future payments.\n",
@@ -1634,9 +1670,7 @@
     },
     "/v1/alias/{alias_id}": {
       "get": {
-        "tags": [
-          "Account alias"
-        ],
+        "tags": ["Account alias"],
         "summary": "Get a specific account alias.\n",
         "operationId": "getAlias",
         "description": "Retrieve a specific account alias based on its unique identifier.\nAn account alias is used to store accounts identification\nin order to be reused for future payments.\n",
@@ -1688,9 +1722,7 @@
         }
       },
       "put": {
-        "tags": [
-          "Account alias"
-        ],
+        "tags": ["Account alias"],
         "summary": "Update a specific alias.\n",
         "operationId": "putAlias",
         "description": "Update a specific account alias based on its unique identifier.\nIt is possible to update:\n  - `label`: the alias label.\n",
@@ -1749,9 +1781,7 @@
         }
       },
       "delete": {
-        "tags": [
-          "Account alias"
-        ],
+        "tags": ["Account alias"],
         "summary": "Delete a specific alias.\n",
         "operationId": "deleteAlias",
         "description": "Delete a specific alias based on its unique identifier.\n",
@@ -1798,9 +1828,7 @@
     },
     "/v1/alias/": {
       "get": {
-        "tags": [
-          "Account alias"
-        ],
+        "tags": ["Account alias"],
         "summary": "Returns a list of alias.\n",
         "description": "Get the list of alias based on search criteria.\nAn account alias is used to store accounts identification\nin order to be reused for future payments.\n",
         "parameters": [
@@ -1860,19 +1888,13 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": [
-                        "self"
-                      ]
+                      "required": ["self"]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": [
-                    "orders",
-                    "_links",
-                    "_page"
-                  ],
+                  "required": ["orders", "_links", "_page"],
                   "example": {
                     "aliases": [
                       {
@@ -1936,9 +1958,7 @@
     },
     "/v1/providers": {
       "get": {
-        "tags": [
-          "Providers"
-        ],
+        "tags": ["Providers"],
         "summary": "Return a list of providers.\n",
         "description": "Get the list of `providers` that can be used to initiate payments.\n",
         "parameters": [
@@ -2004,27 +2024,19 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": [
-                        "self"
-                      ]
+                      "required": ["self"]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": [
-                    "providers",
-                    "_links",
-                    "_page"
-                  ],
+                  "required": ["providers", "_links", "_page"],
                   "example": {
                     "providers": [
                       {
                         "bic": "BICTEST1",
                         "name": "Test Bank 1",
-                        "country_codes": [
-                          "FR"
-                        ],
+                        "country_codes": ["FR"],
                         "base_url": "https://www.testbank1.com",
                         "payment_capabilities": [
                           "SINGLE_PAYMENT",
@@ -2035,13 +2047,9 @@
                       {
                         "bic": "BICTEST2",
                         "name": "Test Bank 2",
-                        "country_codes": [
-                          "FR"
-                        ],
+                        "country_codes": ["FR"],
                         "base_url": "https://www.testbank2.com",
-                        "payment_capabilities": [
-                          "SINGLE_INSTANT_PAYMENT"
-                        ],
+                        "payment_capabilities": ["SINGLE_INSTANT_PAYMENT"],
                         "logo_url": "https://static.oxlin.io/common/pictures/providers_logos/BICTEST2.png"
                       }
                     ],
@@ -2087,9 +2095,7 @@
     },
     "/v1/providers/search/": {
       "post": {
-        "tags": [
-          "Providers"
-        ],
+        "tags": ["Providers"],
         "summary": "Returns a list of providers from search criterion.\n",
         "description": "Returns  `providers` based on search criterion such as\nInternational Bank Account Number (IBAN). Only 'providers' returned\nwith `payment_capabilities` can be used to initiate payments. If\n`payment_capabilities` is undefined,  Linxo Connect Payments doesn't support\nit as `payer` provider.\n",
         "parameters": [
@@ -2178,19 +2184,13 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": [
-                        "self"
-                      ]
+                      "required": ["self"]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": [
-                    "result",
-                    "_links",
-                    "_page"
-                  ]
+                  "required": ["result", "_links", "_page"]
                 },
                 "examples": {
                   "Supported provider": {
@@ -2205,9 +2205,7 @@
                             {
                               "bic": "BICTEST1",
                               "name": "Test Bank 1",
-                              "country_codes": [
-                                "FR"
-                              ],
+                              "country_codes": ["FR"],
                               "base_url": "https://www.testbank1.com",
                               "payment_capabilities": [
                                 "SINGLE_PAYMENT",
@@ -2252,9 +2250,7 @@
                             {
                               "bic": "AGRIFRPP882",
                               "name": "CRCAM DE PARIS ET D ILE DE FRANCE",
-                              "country_code": [
-                                "FR"
-                              ],
+                              "country_code": ["FR"],
                               "logo_url": "https://static.oxlin.io/common/pictures/providers_logos/country.png"
                             }
                           ]
@@ -2303,9 +2299,7 @@
     },
     "/v1/subscribe": {
       "post": {
-        "tags": [
-          "Callback webhooks"
-        ],
+        "tags": ["Callback webhooks"],
         "summary": "Register webhook callback URL.\n",
         "description": "Register your system webhook callback URL we will call each time a resource\nwill be updated. When registered, callback URL will be called as\n`GET https://your.callback.url?resource_type=YYYYYY&resource_id=XXXXXX`\nwith `YYYYYY` the type of updated resource and `XXXXXX` its reference.\nTo know changes on the resource, you need to call the resource specific\nmethod. For instance if the resource is an order, you will call\n`GET v1/running/orders/XXXXXX`in order to get the updated object and\nmanage actions on your system accordingly.\n",
         "parameters": [
@@ -2328,9 +2322,7 @@
                     "$ref": "#/components/schemas/CallbackURL"
                   }
                 },
-                "required": [
-                  "callback_url"
-                ],
+                "required": ["callback_url"],
                 "example": {
                   "callback_url": "https://domain/callback"
                 }
@@ -2396,9 +2388,7 @@
     },
     "/v1/unsubscribe": {
       "post": {
-        "tags": [
-          "Callback webhooks"
-        ],
+        "tags": ["Callback webhooks"],
         "summary": "Unregister the webhook callback URL.\n",
         "description": "Unregister your system webhook callback URL that will be not called anymore.\n",
         "parameters": [
@@ -2436,12 +2426,10 @@
     },
     "/v1/authorized_accounts": {
       "post": {
-        "tags": [
-          "Authorized Accounts"
-        ],
+        "tags": ["Authorized Accounts"],
         "summary": "Create an Authorized account.\n",
         "operationId": "PostAuthorizedAccounts",
-        "description": "Create an Authorized account.\n",
+        "description": "Create an Authorized account.\n\nFor Authorized Accounts using `Sanbox Mode`, you have to use the request samples documented below.\n\nThe `Sanbox Mode` returns the related response sample with `FULL` service level.\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/X-FWD-Request-ID"
@@ -2464,12 +2452,12 @@
                     "identification": {
                       "schema": "SEPA",
                       "iban": "FR8530003000307599775722N09",
-                      "name": "MY COMPANY RIB NAME"
+                      "name": "MY SANDBOX COMPANY"
                     },
                     "entity": {
                       "type": "COMPANY",
-                      "company_name": "MY COMPANY",
-                      "national_identification": "52918756900023"
+                      "company_name": "MY SANDBOX COMPANY",
+                      "national_identification": "99999999999999"
                     }
                   }
                 },
@@ -2477,14 +2465,14 @@
                   "value": {
                     "identification": {
                       "schema": "FPS",
-                      "name": "Graham Greene",
-                      "sort_code": "456789",
-                      "account_number": "52637826"
+                      "name": "Joe Sandbox",
+                      "sort_code": "999999",
+                      "account_number": "99999999"
                     },
                     "entity": {
                       "type": "NATURAL_PERSON",
-                      "firstname": "Robert",
-                      "surname": "Durand",
+                      "firstname": "Joe",
+                      "surname": "Sandbox",
                       "birth_date": "1978/09/13",
                       "birth_city": "Paris",
                       "birth_country": "fr"
@@ -2511,34 +2499,34 @@
                 "examples": {
                   "SEPA account identification for a company": {
                     "value": {
-                      "id": "054b7b60-0d85-4b91-841b-f70163cff8d4",
+                      "id": "99999999-ffff-9999-ffff-999999999999",
                       "service_level": "FULL",
                       "identification": {
                         "schema": "SEPA",
                         "iban": "FR8530003000307599775722N09",
-                        "name": "MY COMPANY RIB NAME"
+                        "name": "MY SANDBOX COMPANY"
                       },
                       "entity": {
                         "type": "COMPANY",
-                        "company_name": "MY COMPANY",
-                        "national_identification": "52918756900023"
+                        "company_name": "MY SANDBOX COMPANY",
+                        "national_identification": "99999999999999"
                       }
                     }
                   },
                   "FPS account identification for a natural person": {
                     "value": {
-                      "id": "054b7b60-0d85-4b91-841b-f70163cff8d4",
+                      "id": "ffffffff-ffff-9999-ffff-999999999999",
                       "service_level": "FULL",
                       "identification": {
                         "schema": "FPS",
-                        "name": "Graham Greene",
-                        "sort_code": "456789",
-                        "account_number": "52637826"
+                        "name": "Joe Sandbox",
+                        "sort_code": "999999",
+                        "account_number": "99999999"
                       },
                       "entity": {
                         "type": "NATURAL_PERSON",
-                        "firstname": "Robert",
-                        "surname": "Durand",
+                        "firstname": "Joe",
+                        "surname": "Sandbox",
                         "birth_date": "1978/09/13",
                         "birth_city": "Paris",
                         "birth_country": "fr"
@@ -2597,12 +2585,10 @@
     },
     "/v1/authorized_accounts/{authorized_account_id}": {
       "get": {
-        "tags": [
-          "Authorized Accounts"
-        ],
+        "tags": ["Authorized Accounts"],
         "summary": "Get a specific Authorized Account.\n",
         "operationId": "getAuthorizedAccounts",
-        "description": "Retrieve a specific Authorized Account based on its unique identifier.\n",
+        "description": "Retrieve a specific Authorized Account based on its unique identifier.\n\nFor Authorized Accounts using `Sanbox Mode`, this endpoint returns 2 accounts\n\n- First account ID: `99999999-ffff-9999-ffff-999999999999`\n\n- Second account ID: `ffffffff-ffff-9999-ffff-999999999999`\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/X-FWD-Request-ID"
@@ -2630,34 +2616,34 @@
                 "examples": {
                   "SEPA account identification for a company": {
                     "value": {
-                      "id": "054b7b60-0d85-4b91-841b-f70163cff8d4",
+                      "id": "99999999-ffff-9999-ffff-999999999999",
                       "service_level": "FULL",
                       "identification": {
                         "schema": "SEPA",
                         "iban": "FR8530003000307599775722N09",
-                        "name": "MY COMPANY RIB NAME"
+                        "name": "MY SANDBOX COMPANY"
                       },
                       "entity": {
                         "type": "COMPANY",
-                        "company_name": "MY COMPANY",
-                        "national_identification": "52918756900023"
+                        "company_name": "MY SANDBOX COMPANY",
+                        "national_identification": "99999999999999"
                       }
                     }
                   },
                   "FPS account identification for a natural person": {
                     "value": {
-                      "id": "054b7b60-0d85-4b91-841b-f70163cff8d4",
+                      "id": "ffffffff-ffff-9999-ffff-999999999999",
                       "service_level": "FULL",
                       "identification": {
                         "schema": "FPS",
-                        "name": "Graham Greene",
-                        "sort_code": "456789",
-                        "account_number": "52637826"
+                        "name": "Joe Sandbox",
+                        "sort_code": "999999",
+                        "account_number": "99999999"
                       },
                       "entity": {
                         "type": "NATURAL_PERSON",
-                        "firstname": "Robert",
-                        "surname": "Durand",
+                        "firstname": "Joe",
+                        "surname": "Sandbox",
                         "birth_date": "1978/09/13",
                         "birth_city": "Paris",
                         "birth_country": "fr"
@@ -2680,12 +2666,10 @@
         }
       },
       "delete": {
-        "tags": [
-          "Authorized Accounts"
-        ],
+        "tags": ["Authorized Accounts"],
         "summary": "Delete a specific Authorized account.\n",
         "operationId": "deleteAuthorizedAccounts",
-        "description": "Delete a specific Authorized account based on its unique identifier.\n",
+        "description": "Delete a specific Authorized account based on its unique identifier.\n\nFor Authorized Accounts using `Sanbox Mode`, this endpoint returns `HTTP 204` code for the following accounts:\n\n- First account ID: `99999999-ffff-9999-ffff-999999999999`\n\n- Second account ID: `ffffffff-ffff-9999-ffff-999999999999`\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/X-FWD-Request-ID"
@@ -2729,11 +2713,9 @@
     },
     "/v1/authorized_accounts/": {
       "get": {
-        "tags": [
-          "Authorized Accounts"
-        ],
+        "tags": ["Authorized Accounts"],
         "summary": "Returns a list of Authorized accounts.\n",
-        "description": "Return a list of Authorized accounts.\n",
+        "description": "Return a list of Authorized accounts.\n\nFor Authorized Accounts using `Sanbox Mode`, this endpoint returns 2 accounts\n\n- First account ID: `99999999-ffff-9999-ffff-999999999999`\n\n- Second account ID: `ffffffff-ffff-9999-ffff-999999999999`\n",
         "parameters": [
           {
             "$ref": "#/components/parameters/X-FWD-Request-ID"
@@ -2788,47 +2770,42 @@
                           "$ref": "#/components/schemas/GenericLink"
                         }
                       },
-                      "required": [
-                        "self"
-                      ]
+                      "required": ["self"]
                     },
                     "_page": {
                       "$ref": "#/components/schemas/Page"
                     }
                   },
-                  "required": [
-                    "_links",
-                    "_page"
-                  ],
+                  "required": ["_links", "_page"],
                   "example": {
                     "authorizedAccounts": [
                       {
-                        "id": "054b7b60-0d85-4b91-841b-f70163cff8d4",
+                        "id": "99999999-ffff-9999-ffff-999999999999",
                         "service_level": "FULL",
                         "identification": {
                           "schema": "SEPA",
                           "iban": "FR8530003000307599775722N09",
-                          "name": "MY COMPANY RIB NAME"
+                          "name": "MY SANDBOX COMPANY"
                         },
                         "entity": {
                           "type": "COMPANY",
-                          "company_name": "MY COMPANY",
-                          "national_identification": "52918756900023"
+                          "company_name": "MY SANDBOX COMPANY",
+                          "national_identification": "99999999999999"
                         }
                       },
                       {
-                        "id": "a4936e95-918b-4301-a907-e5040814fec1",
+                        "id": "ffffffff-ffff-9999-ffff-999999999999",
                         "service_level": "FULL",
                         "identification": {
                           "schema": "FPS",
-                          "name": "Graham Greene",
-                          "sort_code": "456789",
-                          "account_number": "52637826"
+                          "name": "Joe Sandbox",
+                          "sort_code": "999999",
+                          "account_number": "99999999"
                         },
                         "entity": {
                           "type": "NATURAL_PERSON",
-                          "firstname": "Robert",
-                          "surname": "Durand",
+                          "firstname": "Joe",
+                          "surname": "Sandbox",
                           "birth_date": "1978/09/13",
                           "birth_city": "Paris",
                           "birth_country": "fr"
@@ -2878,10 +2855,6 @@
   },
   "components": {
     "securitySchemes": {
-      "BasicAuth": {
-        "type": "http",
-        "scheme": "basic"
-      },
       "ClientCredentials": {
         "type": "oauth2",
         "flows": {
@@ -2894,16 +2867,6 @@
       }
     },
     "parameters": {
-      "BasicAuthorization": {
-        "name": "Authorization",
-        "in": "header",
-        "description": "Basic HTTP authorization composed by `Basic` and followed after a space by `credentials`, where\n`credentials` is the Base64 encoding of client_id and client_password joined by a single colon.\n",
-        "required": true,
-        "example": "Basic lifiGPGOIGpiufOIUGPIGpiuGOIgoiJHPOIGihIUGOPIHoig",
-        "schema": {
-          "type": "string"
-        }
-      },
       "X-FWD-Request-ID": {
         "name": "X-FWD-Request-ID",
         "in": "header",
@@ -3241,11 +3204,8 @@
         "description": "When set, widget will display a cancel link redirecting to that URL.\n",
         "required": false,
         "schema": {
-          "allOf": [
-            {
-              "$ref": "#/components/schemas/URL"
-            }
-          ]
+          "type": "string",
+          "maxLength": 512
         }
       },
       "AskForAlias": {
@@ -3336,10 +3296,7 @@
         "example": "LARGE",
         "schema": {
           "type": "string",
-          "enum": [
-            "SMALL",
-            "LARGE"
-          ],
+          "enum": ["SMALL", "LARGE"],
           "default": "SMALL"
         }
       },
@@ -3444,6 +3401,57 @@
           "$ref": "#/components/schemas/UserReference"
         }
       },
+      "DataForSearchingOrdersParam": {
+        "name": "data_for_searching_orders",
+        "in": "query",
+        "description": "String in the following order data:\n- user reference (full text search)\n- payer email (full text search)\n- payer name (full text search)\n- payer account (strict search)\n- instruction label (full text search)\n- beneficiary name (full text search)\n- beneficiary account (strict search)\n- payer country (full text search)\n- beneficiary country (full text search)\n",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "maxLength": 36
+        }
+      },
+      "FromAmountParam": {
+        "name": "amount_from",
+        "in": "query",
+        "description": "Inclusive minimal amount given with fractional digits, where fractions must be\ncompliant to the currency definition. Up to 14 significant figures.\nNegative amounts are signed by minus. The decimal separator is a dot.\n\nValid representations for amount with up to two decimals are:\n  - 1056\n  - 5768.2\n  - -1.50\n  - 5877.78.\n",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^-?[0-9]{1,14}(\\.[0-9]{1,3})?$",
+          "example": "5877.78"
+        }
+      },
+      "ToAmountParam": {
+        "name": "amount_to",
+        "in": "query",
+        "description": "Inclusive maximal amount given with fractional digits, where fractions must be\ncompliant to the currency definition. Up to 14 significant figures.\nNegative amounts are signed by minus. The decimal separator is a dot.\n\nValid representations for amount with up to two decimals are:\n  - 1056\n  - 5768.2\n  - -1.50\n  - 5877.78.\n",
+        "required": false,
+        "schema": {
+          "type": "string",
+          "pattern": "^-?[0-9]{1,14}(\\.[0-9]{1,3})?$",
+          "example": "5877.78"
+        }
+      },
+      "CurrencyParam": {
+        "name": "currency",
+        "in": "query",
+        "required": false,
+        "schema": {
+          "$ref": "#/components/schemas/CurrencyCode"
+        }
+      },
+      "X-Request-ID": {
+        "name": "X-Request-ID",
+        "in": "header",
+        "description": "ID of the request used for support, unique for each call, as determined\nby the initiating party. As a consequence, you have to generate a\nunique value each time you call any API endpoint, even for two calls\nmade in two different days. Best way to achieve ths is to use the UUID\ngenerator provided by your development framework.\n",
+        "required": true,
+        "example": "99391c7e-ad88-49ec-a2ad-99ddcb1f7721",
+        "schema": {
+          "type": "string",
+          "format": "uuid"
+        }
+      },
       "AliasIdParam": {
         "name": "alias_id",
         "in": "path",
@@ -3531,55 +3539,6 @@
       }
     },
     "schemas": {
-      "TokenCreate": {
-        "description": "Token creation characteristics.\n",
-        "type": "object",
-        "properties": {
-          "grant_type": {
-            "description": "Describe type of requested grant:\n  - `client_credentials`: client credential grant type is the only supported value.\n",
-            "type": "string",
-            "enum": [
-              "client_credentials"
-            ]
-          }
-        }
-      },
-      "TokenItem": {
-        "description": "Describe the authorisation token.\n",
-        "type": "object",
-        "properties": {
-          "access_token": {
-            "description": "Access token to use as authorisation bearer.\n",
-            "type": "string"
-          },
-          "scope": {
-            "description": "Access token scope.\n",
-            "type": "string"
-          },
-          "token_type": {
-            "description": "Define access token type:\n- `Bearer`: Client credential bearer.\n",
-            "type": "string",
-            "enum": [
-              "Bearer"
-            ]
-          },
-          "expires_in": {
-            "description": "Token will expires after the number of seconds defined by the field.\n",
-            "type": "integer"
-          }
-        },
-        "required": [
-          "access_token",
-          "scope",
-          "token_type",
-          "expires_in"
-        ],
-        "example": {
-          "access_token": "eyJhbGciOiJSUzI1NiJ9.eyJqdGkiOiJjYjYwY2E3Y2Q2NjNmMTMxOTdiZiIsImlzcyI6Imh0dHBzOi8vc2FuZGJveC1hdXRoLm94bGluLmlvIiwic3ViIjoiYjUwZTAyODItMjJlZi00ODUxLWJlZDgtOTZlMzc5MmM1OWI5IiwiYXVkIjoiYjUwZTAyODItMjJlZi00ODUxLWJlZDgtOTZlMzc5MmM1OWI5IiwiZXhwIjoxNTk0MjIxMjQ5LCJpYXQiOjE1OTQyMTc2NDksInNjb3BlIjoidXNlcnNfY3JlYXRlIHByb2ZpbGUgb3BlbmlkIn0.CzwmfvHa46M0RHHtYqlNFBSovbrKOv8ezZM5sroJzyUU0aPHHW2aoFO6zwx5vMW1Sox7MqD-Jhs7R7pff_-qr1DBDsxvvCO-DQZw7SjW5DmDjQVyaQlpUiwASOYJyZIyd3K71kROkU6TeL9i2OR7yLDtpj_56fTZWxg9Y1vGv-bUoPhXx2JgzvqyrzfDoadJ6s7_dOxoQFpsYM5lqIWVuWx82uXWL6cWB4usynKJcGe6k6EGLxwzJ0OqmBd1WnPSvywMqzMI5QCTZ7DkFJw2AGnPy-C8keZBL2BwJIzgiaH6j_80P8NdisxxcQlRHz7VTrvwF1rqxgT2adU8Jtt_RCKlvZ44jxCN7fDk28sot2LEAMC1VC3A0BWrhY6EX84hUW_ZJIFJG6753xCDzZ9bZcYVjC5yW0DCcT8CP3xXeOkIAdo6ZpfbMgntpNGk0ZPyiTUhCwr9s17t5DuDyCCwJ5O4eZhHqYRhRspExvuFtbldIsCYDARvBZe-EQ3jjkuFnCHmd-whZ5qcd6sEiRferthzC05NfufFitGoVLYrBYSHeaUE8mNeSgAeadoBrBxDTjOq_B2NdoiGo3UbVD2oi7As7WfohF8SSNXHqRJId3vcQBx4yxzilU2QfoFnfhJtbDcR2xElg36rJGLWLZQLpd7qQkuw_ADPddsJVxSqND4",
-          "token_type": "Bearer",
-          "expires_in": "3600"
-        }
-      },
       "ErrorModel": {
         "description": "Generic error report structure.\n",
         "type": "object",
@@ -3609,10 +3568,7 @@
             "maxLength": 140
           }
         },
-        "required": [
-          "error",
-          "error_description"
-        ],
+        "required": ["error", "error_description"],
         "example": {
           "error": "PARAMETER_MISSING",
           "error_description": "Missing request header 'X-FWD-Request-ID' for method parameter of type String",
@@ -3634,21 +3590,14 @@
       "InstantPaymentType": {
         "description": "Define expectation according instant payment:\n- `EXPECTED`: only instant payment can be offered to initialize a payment.\n- `USER_CHOICE`: debtor user can choose in the case the bank support instant payment.\n- `NO`: only non instant payment can be offered to initialize a payment.\n",
         "type": "string",
-        "enum": [
-          "EXPECTED",
-          "USER_CHOICE",
-          "NO"
-        ],
+        "enum": ["EXPECTED", "USER_CHOICE", "NO"],
         "default": "NO",
         "example": "EXPECTED"
       },
       "SensitiveData": {
         "description": "Define if Linxo Connect Payments API return sensitive data:\n- `ALL`: all available data are returned with customer agreement.\n- `NONE`: no sensitive data are returned, payer and beneficiary IBAN are masked.\n",
         "type": "string",
-        "enum": [
-          "ALL",
-          "NONE"
-        ],
+        "enum": ["ALL", "NONE"],
         "default": "ALL",
         "example": "ALL"
       },
@@ -3666,15 +3615,12 @@
       "DateUpdateDirection": {
         "description": "Define how to update the date when the bank limit it for instance refusing\na Target 2 calendar date :\n- `NONE`: don’t update the date (reject the date if it is not supported by the bank).\n- `BOTH`: find a new date before or after the given date (keep closest).\n",
         "type": "string",
-        "enum": [
-          "NONE",
-          "BOTH"
-        ],
+        "enum": ["NONE", "BOTH"],
         "default": "BOTH",
         "example": "NONE"
       },
       "Frequency": {
-        "description": "Standing orders frequency:\n- `DAILY`: Daily.\n- `WEEKLY`: Weekly.\n- `EVERY_TWO_WEEKS`: Every two weeks.\n- `MONTHLY`: Monthly.\n- `EVERY_TWO_MONTHS`: Every two months.\n- `QUARTERLY`: Quarterly.\n- `SEMI_ANNUAL`: Semi annual.\n- `YEAR`: Annual.\n",
+        "description": "Standing orders frequency (**RESERVED** to be used with `STANDING_ORDERS` capability: currently **NOT SUPPORTED**):\n- `DAILY`: Daily.\n- `WEEKLY`: Weekly.\n- `EVERY_TWO_WEEKS`: Every two weeks.\n- `MONTHLY`: Monthly.\n- `EVERY_TWO_MONTHS`: Every two months.\n- `QUARTERLY`: Quarterly.\n- `SEMI_ANNUAL`: Semi annual.\n- `YEAR`: Annual.\n",
         "type": "string",
         "enum": [
           "DAILY",
@@ -3696,11 +3642,7 @@
       "PaymentSchema": {
         "description": "Define payment schema:\n- `SEPA`: SEPA payment.\n- `FPS`: Faster Payment, UK instant payment schema.\n- `ALIAS`: An alias representing registered account .\n\n> `ALIAS` value is only available in a context you can use an `ALIAS`,\n> as a consequence  it can't be valid when defining an `ALIAS`.\n",
         "type": "string",
-        "enum": [
-          "SEPA",
-          "FPS",
-          "ALIAS"
-        ],
+        "enum": ["SEPA", "FPS", "ALIAS"],
         "example": "SEPA"
       },
       "IBANPayer": {
@@ -3722,10 +3664,7 @@
                 "$ref": "#/components/schemas/IBANPayer"
               }
             },
-            "required": [
-              "schema",
-              "iban"
-            ],
+            "required": ["schema", "iban"],
             "example": {
               "schema": "SEPA",
               "iban": "FR7612345987650123456789014"
@@ -3755,12 +3694,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "schema",
-              "name",
-              "sort_code",
-              "account_number"
-            ],
+            "required": ["schema", "name", "sort_code", "account_number"],
             "example": {
               "schema": "FPS",
               "name": "John Dupont",
@@ -3789,10 +3723,7 @@
                 "$ref": "#/components/schemas/AliasId"
               }
             },
-            "required": [
-              "schema",
-              "alias_id"
-            ]
+            "required": ["schema", "alias_id"]
           }
         ]
       },
@@ -3820,17 +3751,10 @@
           "schema"
         ]
       },
-      "URL": {
-        "type": "string",
-        "maxLength": 512
-      },
       "RedirectURL": {
         "description": "The URL where the user should be redirected after authorising the\npayment. We will append the order_id parameter to the URL when\nredirecting the user to: `GET https://your.redirect.url?order_id=XXXXXX`\nwith `XXXXXX` the reference of the concerned `order`. To know status\nof the order, to get the up to date object and manage actions on your\nsystem you need to either call:\n- `GET /v1/running/orders/XXXXXX`: during the realtime\nauthentication flow with the payer when you need to take a live\ndecision. That method will work during a limited time after\nauthentication was done.\n- `GET /v1/reporting/orders/XXXXXX`: in all other cases when status\ninformation have no impact on realtime decision.\n\nNote the URL is not limited to `http` or `https` scheme name. If requested,\nyou can use any scheme name such as a mobile application specific scheme name.\n",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/URL"
-          }
-        ]
+        "type": "string",
+        "maxLength": 512
       },
       "AmountValue": {
         "description": "The amount given with fractional digits, where fractions must be\ncompliant to the currency definition. Up to 14 significant figures.\nNegative amounts are signed by minus. The decimal separator is a dot.\n\nValid representations for amount with up to two decimals are:\n  - 1056\n  - 5768.2\n  - -1.50\n  - 5877.78\n",
@@ -3886,11 +3810,7 @@
                 "$ref": "#/components/schemas/ComplementaryName"
               }
             },
-            "required": [
-              "schema",
-              "iban",
-              "name"
-            ],
+            "required": ["schema", "iban", "name"],
             "example": {
               "schema": "SEPA",
               "iban": "FR7612345987650123456789014",
@@ -3924,12 +3844,7 @@
                 "$ref": "#/components/schemas/ComplementaryName"
               }
             },
-            "required": [
-              "schema",
-              "name",
-              "sort_code",
-              "account_number"
-            ],
+            "required": ["schema", "name", "sort_code", "account_number"],
             "example": {
               "schema": "FPS",
               "name": "John Dupont",
@@ -3955,10 +3870,7 @@
                 "$ref": "#/components/schemas/ComplementaryName"
               }
             },
-            "required": [
-              "schema",
-              "alias_id"
-            ]
+            "required": ["schema", "alias_id"]
           }
         ]
       },
@@ -4010,12 +3922,7 @@
             "$ref": "#/components/schemas/Label"
           }
         },
-        "required": [
-          "amount",
-          "currency",
-          "beneficiary",
-          "label"
-        ]
+        "required": ["amount", "currency", "beneficiary", "label"]
       },
       "SingleInstructionOrder": {
         "description": "An order represent one or more payments, today or in the future, to a\nunique beneficiary or multiples beneficiaries. An order is associated\nto a unique payment initiation, as a consequence it is associated to\na unique authentication from the PSU bank.\n",
@@ -4058,9 +3965,7 @@
             "$ref": "#/components/schemas/InstructionItemCreate"
           }
         },
-        "required": [
-          "redirect_url"
-        ]
+        "required": ["redirect_url"]
       },
       "MultiplesInstructionsOrder": {
         "description": "An order represent one or more payments, today or in the future, to a\nunique beneficiary or multiples beneficiaries. An order is associated\nto a unique payment initiation, as a consequence it is associated to\na unique authentication from the PSU bank.\n",
@@ -4106,10 +4011,7 @@
             }
           }
         },
-        "required": [
-          "instructions",
-          "redirect_url"
-        ]
+        "required": ["instructions", "redirect_url"]
       },
       "OrderId": {
         "description": "Universally Unique IDentifier for `Order`.\n",
@@ -4136,6 +4038,10 @@
         ],
         "example": "AUTHORIZED"
       },
+      "AccountCountry": {
+        "description": "Bank account country ISO-3166 Alpha-2 country code.\n",
+        "type": "string"
+      },
       "SEPAPayerAccountItem": {
         "description": "Represent a SEPA payer account.\n",
         "allOf": [
@@ -4147,12 +4053,17 @@
               },
               "iban": {
                 "$ref": "#/components/schemas/IBANPayer"
+              },
+              "name": {
+                "description": "Name identifying payer.\n",
+                "type": "string",
+                "pattern": "^[a-zA-Z0-9 ,-]{1,140}$"
+              },
+              "country": {
+                "$ref": "#/components/schemas/AccountCountry"
               }
             },
-            "required": [
-              "schema",
-              "iban"
-            ],
+            "required": ["schema", "iban"],
             "example": {
               "schema": "SEPA",
               "iban": "FR7612345987650123456789014",
@@ -4181,14 +4092,12 @@
               "account_number": {
                 "description": "Number of account: eight digits only, no whitespace or punctuation\n",
                 "type": "string"
+              },
+              "country": {
+                "$ref": "#/components/schemas/AccountCountry"
               }
             },
-            "required": [
-              "schema",
-              "name",
-              "sort_code",
-              "account_number"
-            ],
+            "required": ["schema", "name", "sort_code", "account_number"],
             "example": {
               "schema": "FPS",
               "name": "John Dupont",
@@ -4209,12 +4118,12 @@
               },
               "alias_id": {
                 "$ref": "#/components/schemas/AliasId"
+              },
+              "country": {
+                "$ref": "#/components/schemas/AccountCountry"
               }
             },
-            "required": [
-              "schema",
-              "alias_id"
-            ]
+            "required": ["schema", "alias_id"]
           }
         ]
       },
@@ -4250,14 +4159,11 @@
       },
       "AuthURL": {
         "description": "The URL your user have to open in order to realize authorisation for\nthe order. Refer to `GET /authorize/{order_id}` for details about how to\nto override language or personalise screens.\n",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/URL"
-          }
-        ]
+        "type": "string",
+        "maxLength": 512
       },
       "PaymentCapability": {
-        "description": "Describe type of payment.\n  - `SINGLE_PAYMENT`: Single unique payment.\n  - `SINGLE_INSTANT_PAYMENT`: Single immediate payment.\n  - `STANDING_ORDERS`: Standing orders is a recurring payment with an immutable\n  recurring amount.\n  - `BATCH_PAYMENTS`: Batch payment is a payment from a unique payer to multiple\n  beneficiaries.\n",
+        "description": "Describe type of payment.\n  - `SINGLE_PAYMENT`: Single unique payment.\n  - `SINGLE_INSTANT_PAYMENT`: Single immediate payment.\n  - `STANDING_ORDERS` (**RESERVED**: currently **NOT SUPPORTED**): Standing orders is a recurring payment with an immutable\n  recurring amount.\n  - `BATCH_PAYMENTS` (**RESERVED**: currently **NOT SUPPORTED**): Batch payment is a payment from a unique payer to multiple\n  beneficiaries.\n",
         "type": "string",
         "enum": [
           "SINGLE_PAYMENT",
@@ -4288,13 +4194,12 @@
               },
               "complementary_name": {
                 "$ref": "#/components/schemas/ComplementaryName"
+              },
+              "country": {
+                "$ref": "#/components/schemas/AccountCountry"
               }
             },
-            "required": [
-              "schema",
-              "iban",
-              "name"
-            ],
+            "required": ["schema", "iban", "name"],
             "example": {
               "schema": "SEPA",
               "iban": "FR7612345987650123456789014",
@@ -4326,14 +4231,12 @@
               },
               "complementary_name": {
                 "$ref": "#/components/schemas/ComplementaryName"
+              },
+              "country": {
+                "$ref": "#/components/schemas/AccountCountry"
               }
             },
-            "required": [
-              "schema",
-              "name",
-              "sort_code",
-              "account_number"
-            ],
+            "required": ["schema", "name", "sort_code", "account_number"],
             "example": {
               "schema": "FPS",
               "name": "John Dupont",
@@ -4357,12 +4260,12 @@
               },
               "complementary_name": {
                 "$ref": "#/components/schemas/ComplementaryName"
+              },
+              "country": {
+                "$ref": "#/components/schemas/AccountCountry"
               }
             },
-            "required": [
-              "schema",
-              "alias_id"
-            ],
+            "required": ["schema", "alias_id"],
             "example": {
               "schema": "FPS",
               "alias_id": "054b7b60-0d85-4b91-841b-f70163cff8d4"
@@ -4398,13 +4301,13 @@
       "PaymentStatus": {
         "description": "Define instructed payment status:\n- `SUBMITTED`: Intermediary state, payment was transmitted to the bank\nbut not yet executed.\n- `EXECUTED`: Final state, payment was executed.\n- `CANCELLED`: Final state, payment was cancelled.\n- `REJECTED`: Final state, payment was rejected.\n",
         "type": "string",
-        "enum": [
-          "SUBMITTED",
-          "EXECUTED",
-          "CANCELLED",
-          "REJECTED"
-        ],
+        "enum": ["SUBMITTED", "EXECUTED", "CANCELLED", "REJECTED"],
         "example": "SUBMITTED"
+      },
+      "StatusReason": {
+        "description": "ISO20022: Provides detailed information on the status reason.\nRaw reason provided by the bank for `REJECTED` orders and payments.\nList of codes are available in the STET functional model document.\n",
+        "type": "string",
+        "example": "CUST"
       },
       "PaymentItem": {
         "description": "A payment represent a money transfer from a payer account to a\nbeneficiary account. Payment is created when instruction was\ntransmitted to the payer bank.\n",
@@ -4412,6 +4315,9 @@
         "properties": {
           "status": {
             "$ref": "#/components/schemas/PaymentStatus"
+          },
+          "payment_status_raw_reason": {
+            "$ref": "#/components/schemas/StatusReason"
           },
           "amount": {
             "$ref": "#/components/schemas/AmountValue"
@@ -4429,13 +4335,7 @@
             "$ref": "#/components/schemas/CreationDate"
           }
         },
-        "required": [
-          "status",
-          "amount",
-          "currency",
-          "execution_date",
-          "creation_date"
-        ],
+        "required": ["status", "amount", "currency", "creation_date"],
         "example": {
           "payment_status": "SUBMITTED",
           "amount": "123.45",
@@ -4467,12 +4367,7 @@
             }
           }
         },
-        "required": [
-          "amount",
-          "currency",
-          "beneficiary",
-          "label"
-        ],
+        "required": ["amount", "currency", "beneficiary", "label"],
         "example": {
           "amount": "123.45",
           "currency": "EUR",
@@ -4494,27 +4389,21 @@
           ]
         }
       },
-      "ChangeDate": {
-        "description": "Object change date and time. ISO 8601 format is used.\n",
-        "type": "string",
-        "format": "date-time",
-        "example": "2019-12-12T13:34:45+01:00"
-      },
-      "OrderHistoryItem": {
-        "description": "Order events.\n",
+      "Sca": {
+        "description": "List of Strong Customer Authentication (SCA) information returned by the provider\n",
         "type": "object",
         "properties": {
-          "order_status": {
-            "$ref": "#/components/schemas/OrderStatus"
-          },
-          "change_date": {
-            "$ref": "#/components/schemas/ChangeDate"
+          "applied": {
+            "description": "Describe if SCA has been applied by the provider.\n- `YES`: SCA applied by the provider on this order (No exemption).\n- `NO`: Exemption applied by the provider on this order (No SCA).\n- `UNKNOWN`: The provider didn't not return SCA exemption information on this order.\n",
+            "type": "string",
+            "enum": ["YES", "NO", "UNKNOWN"]
           }
-        },
-        "required": [
-          "order_status",
-          "change_date"
-        ]
+        }
+      },
+      "Channel": {
+        "description": "Initiating channel for the order. This value is part of the Client ID configuration.\n- `ONLINE`: Order initiated when the account holder is present online (E-Commerce, payment links, C2C payments…).\n- `PROXIMITY`: Order initiated when the account holder is physically present (In store).\n",
+        "type": "string",
+        "enum": ["ONLINE", "PROXIMITY"]
       },
       "OrderItem": {
         "description": "An order represent one or more payments, today or in the future, to a\nunique beneficiary or multiples beneficiaries. An order is associated\nto a unique payment initiation, as a consequence it is associated to\na unique authentication from the PSU bank.\n",
@@ -4575,20 +4464,14 @@
               "$ref": "#/components/schemas/InstructionItem"
             }
           },
-          "history": {
-            "description": "Describe the history of the order with an entry per order event. No information returned when order have no history.\n",
-            "type": "array",
-            "items": {
-              "$ref": "#/components/schemas/OrderHistoryItem"
-            }
+          "sca": {
+            "$ref": "#/components/schemas/Sca"
+          },
+          "channel": {
+            "$ref": "#/components/schemas/Channel"
           }
         },
-        "required": [
-          "id",
-          "order_status",
-          "payments",
-          "redirect_url"
-        ],
+        "required": ["id", "order_status", "payments", "redirect_url"],
         "example": {
           "id": "987123",
           "bic": "AXABFRPP",
@@ -4653,16 +4536,11 @@
         "type": "object",
         "properties": {
           "href": {
-            "allOf": [
-              {
-                "$ref": "#/components/schemas/URL"
-              }
-            ]
+            "type": "string",
+            "maxLength": 512
           }
         },
-        "required": [
-          "href"
-        ],
+        "required": ["href"],
         "example": [
           {
             "href": "https://domain/context/resource"
@@ -4690,18 +4568,49 @@
             "type": "number"
           }
         },
-        "required": [
-          "size",
-          "total_elements",
-          "total_pages",
-          "number"
-        ],
+        "required": ["size", "total_elements", "total_pages", "number"],
         "example": {
           "size": "100",
           "total_elements": "1215",
           "total_pages": "13",
           "number": "7"
         }
+      },
+      "ChangeDate": {
+        "description": "Object change date and time. ISO 8601 format is used.\n",
+        "type": "string",
+        "format": "date-time",
+        "example": "2019-12-12T13:34:45+01:00"
+      },
+      "OrderHistoryItem": {
+        "description": "Describe the history of the order with an entry per order event. No information returned when order have no history.\n",
+        "type": "object",
+        "properties": {
+          "date": {
+            "$ref": "#/components/schemas/ChangeDate"
+          },
+          "content": {
+            "description": "Content of the order event",
+            "type": "string"
+          },
+          "type": {
+            "description": "Type of the order event (API, SIMPLE...)",
+            "type": "string"
+          },
+          "method": {
+            "description": "Method of the order event (POST, GET, PUT..)",
+            "type": "string"
+          },
+          "feature": {
+            "description": "Feature of the order event (order, authorize..)",
+            "type": "string"
+          },
+          "status": {
+            "description": "HTTP status of the order event (200, 404...)",
+            "type": "string"
+          }
+        },
+        "required": ["date"]
       },
       "IBAN": {
         "description": "International Bank Account Number (IBAN) - identification used\ninternationally by financial institutions to uniquely identify the\naccount of a customer.\n",
@@ -4722,10 +4631,7 @@
                 "$ref": "#/components/schemas/IBAN"
               }
             },
-            "required": [
-              "schema",
-              "iban"
-            ],
+            "required": ["schema", "iban"],
             "example": {
               "schema": "SEPA",
               "iban": "FR7612345987650123456789014"
@@ -4755,12 +4661,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "schema",
-              "name",
-              "sort_code",
-              "account_number"
-            ],
+            "required": ["schema", "name", "sort_code", "account_number"],
             "example": {
               "schema": "FPS",
               "name": "John Dupont",
@@ -4809,10 +4710,7 @@
             "$ref": "#/components/schemas/PayerBic"
           }
         },
-        "required": [
-          "user_reference",
-          "account"
-        ]
+        "required": ["user_reference", "account"]
       },
       "AliasItem": {
         "description": "An alias represent a stored account identification.\n",
@@ -4836,12 +4734,7 @@
             "$ref": "#/components/schemas/PayerBic"
           }
         },
-        "required": [
-          "id",
-          "user_reference",
-          "label",
-          "account"
-        ]
+        "required": ["id", "user_reference", "label", "account"]
       },
       "AliasItemUpdate": {
         "description": "An alias represent a stored account identification.\n",
@@ -4853,17 +4746,12 @@
             "pattern": "^[a-zA-Z0-9 ,-]{1,140}$"
           }
         },
-        "required": [
-          "label"
-        ]
+        "required": ["label"]
       },
       "AppToAppSupport": {
         "description": "Operating system type supporting application to application authentication flow.\n  - `ANDROID`: App to App flow is supported on Android devices.\n  - `IOS`: App to App flow is supported on iOS devices.\n",
         "type": "string",
-        "enum": [
-          "ANDROID",
-          "IOS"
-        ]
+        "enum": ["ANDROID", "IOS"]
       },
       "ProviderItemCommon": {
         "description": "A provider represent a bank.\n",
@@ -4892,12 +4780,7 @@
             "description": "The logo URL for the provider.\n"
           }
         },
-        "required": [
-          "bic",
-          "name",
-          "country_codes",
-          "logo_url"
-        ]
+        "required": ["bic", "name", "country_codes", "logo_url"]
       },
       "ProviderItemInternal": {
         "description": "A provider we can initiate a payment from.\n",
@@ -4931,9 +4814,7 @@
             "type": "number"
           }
         },
-        "required": [
-          "payment_capabilities"
-        ]
+        "required": ["payment_capabilities"]
       },
       "ProviderSearchQueryItem": {
         "description": "Description of the search criterion to look for 'providers'.\n",
@@ -4995,18 +4876,13 @@
       },
       "CallbackURL": {
         "description": "The URL called to notify your system.\n",
-        "allOf": [
-          {
-            "$ref": "#/components/schemas/URL"
-          }
-        ]
+        "type": "string",
+        "maxLength": 512
       },
       "ResourceType": {
         "description": "Define payment schema:\n- `ORDERS`: Order.\n",
         "type": "string",
-        "enum": [
-          "ORDERS"
-        ],
+        "enum": ["ORDERS"],
         "example": "ORDERS"
       },
       "ResourceId": {
@@ -5030,9 +4906,7 @@
             "SEPAAuthorizedAccountItem": "#/components/schemas/SEPAAuthorizedAccountItem"
           }
         },
-        "required": [
-          "schema"
-        ]
+        "required": ["schema"]
       },
       "FPSAuthorizedAccountItem": {
         "description": "Represent a Payment payer or beneficiary account.\n",
@@ -5056,11 +4930,7 @@
                 "type": "string"
               }
             },
-            "required": [
-              "name",
-              "sort_code",
-              "account_number"
-            ],
+            "required": ["name", "sort_code", "account_number"],
             "example": {
               "name": "John Dupont",
               "sort_code": "102030",
@@ -5087,10 +4957,7 @@
                 "pattern": "^[a-zA-Z0-9 ,-]{1,140}$"
               }
             },
-            "required": [
-              "iban",
-              "name"
-            ],
+            "required": ["iban", "name"],
             "example": {
               "iban": "FR7612345987650123456789014",
               "name": "Jean Dupont"
@@ -5101,21 +4968,10 @@
       "AuthorizedAccountPaymentSchema": {
         "description": "Define payment schema:\n- `SEPA`: SEPA payment.\n- `FPS`: Faster Payment, UK instant payment schema.\n",
         "type": "string",
-        "enum": [
-          "SEPA",
-          "FPS"
-        ],
+        "enum": ["SEPA", "FPS"],
         "example": "SEPA"
       },
       "AuthorizedAccountIdentification": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/SEPAAuthorizedAccountItem"
-          },
-          {
-            "$ref": "#/components/schemas/FPSAuthorizedAccountItem"
-          }
-        ],
         "discriminator": {
           "propertyName": "schema",
           "mapping": {
@@ -5125,6 +4981,14 @@
         },
         "required": [
           "schema"
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/SEPAAuthorizedAccountItem"
+          },
+          {
+            "$ref": "#/components/schemas/FPSAuthorizedAccountItem"
+          }
         ]
       },
       "NaturalPersonFirstname": {
@@ -5154,9 +5018,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "NATURAL_PERSON"
-            ],
+            "enum": ["NATURAL_PERSON"],
             "example": "NATURAL_PERSON"
           },
           "firstname": {
@@ -5190,7 +5052,7 @@
         "example": "World Corp"
       },
       "CompanyNationalIdentification": {
-        "description": "National identifier for the company emited by the host country (SIREN in France).\n",
+        "description": "National identifier for the company emitted by the host country\n- France: `SIRET`\n",
         "type": "string",
         "example": "439826121"
       },
@@ -5200,9 +5062,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "enum": [
-              "COMPANY"
-            ],
+            "enum": ["COMPANY"],
             "example": "COMPANY"
           },
           "company_name": {
@@ -5212,21 +5072,9 @@
             "$ref": "#/components/schemas/CompanyNationalIdentification"
           }
         },
-        "required": [
-          "type",
-          "company_name",
-          "national_identification"
-        ]
+        "required": ["type", "company_name", "national_identification"]
       },
       "AuthorizedAccountEntity": {
-        "oneOf": [
-          {
-            "$ref": "#/components/schemas/AuthorizedAccountNaturalPerson"
-          },
-          {
-            "$ref": "#/components/schemas/AuthorizedAccountCompany"
-          }
-        ],
         "discriminator": {
           "propertyName": "type",
           "mapping": {
@@ -5236,6 +5084,14 @@
         },
         "required": [
           "type"
+        ],
+        "oneOf": [
+          {
+            "$ref": "#/components/schemas/AuthorizedAccountNaturalPerson"
+          },
+          {
+            "$ref": "#/components/schemas/AuthorizedAccountCompany"
+          }
         ]
       },
       "AuthorizedAccountsItem": {
@@ -5249,10 +5105,7 @@
             "$ref": "#/components/schemas/AuthorizedAccountEntity"
           }
         },
-        "required": [
-          "identification",
-          "entity"
-        ]
+        "required": ["identification", "entity"]
       },
       "AuthorizedAccountId": {
         "description": "Universally Unique IDentifier for `Authorized Accounts`.\n",
@@ -5263,11 +5116,7 @@
       "ServiceLevel": {
         "description": "Registration person type:\n- `FULL`: Full access to services capabilities.\n- `PARTIAL`: Service capabilities restricted (number of transactions, maximum amount...)\nbased on risk management policy.\n- `NONE`: No service available.\n",
         "type": "string",
-        "enum": [
-          "FULL",
-          "PARTIAL",
-          "NONE"
-        ],
+        "enum": ["FULL", "PARTIAL", "NONE"],
         "example": "FULL"
       },
       "AuthorizedAccountsItemCreate": {
@@ -5287,10 +5136,7 @@
             "$ref": "#/components/schemas/AuthorizedAccountEntity"
           }
         },
-        "required": [
-          "identification",
-          "entity"
-        ]
+        "required": ["identification", "entity"]
       }
     },
     "headers": {
