@@ -1,0 +1,35 @@
+{
+  "unversionedId": "ribpay-api/Account/delete-account",
+  "id": "ribpay-api/Account/delete-account",
+  "title": "Delete an account",
+  "description": "Delete an account",
+  "source": "@site/docs/ribpay-api/Account/delete-account.api.mdx",
+  "sourceDirName": "ribpay-api/Account",
+  "slug": "/ribpay-api/Account/delete-account",
+  "permalink": "/docs/ribpay-api/Account/delete-account",
+  "draft": false,
+  "editUrl": null,
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "id": "delete-account",
+    "title": "Delete an account",
+    "description": "Delete an account",
+    "sidebar_label": "Delete an account",
+    "hide_title": true,
+    "hide_table_of_contents": true,
+    "api": "eJylU01v2zAM/SuGsENXxLXTZUCaUzM0AwbsNGynIAMYi461KZIqydkMw/99ZGwkDrIeuvlikuLHI/nYCuvQQ1TWfJJiISRqjLgsClubKCbCgYc9WXwQi3UrPD7XyiN5Rl/jRChDMQ5iRa6GHElTkuRQVLgHsWhFbBxbQ/TK7I4JI2XjsO/rPH2AtFymHzftvEvH6ozUafp+M7a9I9v8AbbLD1fmkTq9796IrttMCGtw1gQMDOM+z/knMRReOW6XEAxtJn3TMgl1UWAIZa11Q1ALayLSFCjuNrvl37mtVyUaZmC3P7A4DtXz0KPqoe3JE3Z4Pazu+E3ELJ+9XNLYmJQkyX8CPI7+L5QE87LC03EUCZgETmQiIlX2zLKeDRXp2eCTtUp2gmlVWq50IN716eZ309ldzihV1Fz9sYQQVdlk4RfsdugFIXA2xD0YjhzI+DcUFzhP3UT8HTOngRhNmWqv+a2Htxbn4AXRm7hVUSV+aNstBPzmddex+blG35CdxAN4BVuGSmcjVWCZWi9BB7zCcFqcuPkyXNjb5LySS2yDEQxT6wC6Zo3En9j059dtyKtCkDQVrt4/0MrRxVEIU4Tv5LSVp9Xn1dcVLfQP0utc9Q==",
+    "sidebar_class_name": "delete api-method",
+    "info_path": "docs/ribpay-api/fastify-swagger",
+    "custom_edit_url": null
+  },
+  "sidebar": "ribpaySidebar",
+  "previous": {
+    "title": "Create a new account",
+    "permalink": "/docs/ribpay-api/Account/create-account"
+  },
+  "next": {
+    "title": "Retrieve a specific account by ID",
+    "permalink": "/docs/ribpay-api/Account/get-account-by-id"
+  }
+}

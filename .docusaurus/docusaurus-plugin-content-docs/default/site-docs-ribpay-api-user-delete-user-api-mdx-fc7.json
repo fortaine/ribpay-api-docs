@@ -1,0 +1,35 @@
+{
+  "unversionedId": "ribpay-api/User/delete-user",
+  "id": "ribpay-api/User/delete-user",
+  "title": "Delete a user",
+  "description": "Delete a user",
+  "source": "@site/docs/ribpay-api/User/delete-user.api.mdx",
+  "sourceDirName": "ribpay-api/User",
+  "slug": "/ribpay-api/User/delete-user",
+  "permalink": "/docs/ribpay-api/User/delete-user",
+  "draft": false,
+  "editUrl": null,
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "id": "delete-user",
+    "title": "Delete a user",
+    "description": "Delete a user",
+    "sidebar_label": "Delete a user",
+    "hide_title": true,
+    "hide_table_of_contents": true,
+    "api": "eJylU02L2zAQ/StG9NAu8drZppDNqSmbQqGn0j2FLEzscaxWkbT6SGuM/3tnYpM4DYUu64s0z/PxRvOmFcaigyCN/lKKhShRYcBHj05MhAUHezKdF4t1Kxw+R+mQ3IKLOBFSU4CFUJOrJkeyZEl3X9S4B7FoRWgsoz44qXfHhIGycdjTOk/vIa2W6edNO+/SsTkjc5p+2Iyx94TN72G7/HQFj8zpXfdGdN1mQly9NdqjZxp3ec5Hib5w0nKvxIB7TPp2y8THokDvq6hUQzwLowPqwEE32Q0f557+P8vQvdn+wCJw947fOsie1J48YYfXz9Qdv4mY5bN/1NMmJJWJunw51XHoq/gRwcv0D8dHSCCJvXhIOLU5S6qffk12xg5ZK8tOsIYqwyUOJLI+z/x2OrvNmZ4Mist+rMAHWTWZ/wW7HeWm0tb4sAfNkYPy/i5/Qe7UQsDfIbMKSLqUJTrF/3peazFELkjEpKCaSjDatlvw+OhU1zH8HNE1hNP1AE7CljnScpTS850arkB5vCJwmpN4+23Yo3fJeQiXxAYQNMvoACqyRdef2PRL1m3Iq0YoiTFX738sSX42jEJYEbwNp1k8rL6uvq9ohH8AHStRew==",
+    "sidebar_class_name": "delete api-method",
+    "info_path": "docs/ribpay-api/fastify-swagger",
+    "custom_edit_url": null
+  },
+  "sidebar": "ribpaySidebar",
+  "previous": {
+    "title": "Create a new user",
+    "permalink": "/docs/ribpay-api/User/create-user"
+  },
+  "next": {
+    "title": "Retrieve all users",
+    "permalink": "/docs/ribpay-api/User/get-all-users"
+  }
+}

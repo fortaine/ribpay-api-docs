@@ -1,0 +1,40 @@
+---
+id: get-all-accounts
+title: "Retrieve all accounts"
+description: "Retrieve all accounts"
+sidebar_label: "Retrieve all accounts"
+hide_title: true
+hide_table_of_contents: true
+api: eJydU0FP6zAM/itTjqiwgTigneCAnt71CU7TNHmpu4aXJsVxC1W1/47dFhgghkQvaeLP9pfvc3oTayRgF8Pf3CzNDvnG+xtrYxM4mcwQpjqGhMkse3OxWOiSY7Lkak2SlFfwjJDJYYv5LDXWYkpF430nNWwMjIE19WR+okuyJVbwm1rc1ShAIALdOsZqoDadx+0DWpZATXoxdiNxGOtuXH6ATdIi7Mw+ewuHQQjwP+MqPAoYA0cALm3AsmsPUdsYPUI4hNmGCIPtjrOJ7ApnB+4bkdX5o3BLCIz5BvgrLDNFpEojJhfQKTu5qOTWQByQJl2CeAFbL3lMDWafW01f9snbf5OlM/B+Bu8TViGXcZo9NQ64lM18QqjHoYjatkVKY6mrs/PLs4VOg2OlYa4LSCJCN09PsNshDZxj4krkVMKDX98y+MDzTRLGZ57XHtzgSEODqiO71auYZp2ZUvroUd9vIeE9+f1ejx8bJPFtJb8tkBv1Wq2lVImQC8Xlqjf/sRunHmu9aQu+0db6SvbrA2n+3N6Jri8nHEhs
+sidebar_class_name: "get api-method"
+info_path: docs/ribpay-api/fastify-swagger
+custom_edit_url: null
+---
+
+import ApiTabs from "@theme/ApiTabs";
+import DiscriminatorTabs from "@theme/DiscriminatorTabs";
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import SecuritySchemes from "@theme/ApiExplorer/SecuritySchemes";
+import MimeTabs from "@theme/MimeTabs";
+import ParamsItem from "@theme/ParamsItem";
+import ResponseSamples from "@theme/ResponseSamples";
+import SchemaItem from "@theme/SchemaItem";
+import SchemaTabs from "@theme/SchemaTabs";
+import Markdown from "@theme/Markdown";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+
+<h1 className={"openapi__heading"}>Retrieve all accounts</h1>
+
+<MethodEndpoint method={"get"} path={"/account"}></MethodEndpoint>
+
+
+
+Retrieve all accounts
+
+<div><div><ApiTabs label={undefined} id={undefined}><TabItem label={"200"} value={"200"}><div>
+
+Accounts retrieved successfully
+
+</div><div><MimeTabs className={"openapi-tabs__mime"} schemaType={"response"}><TabItem label={"*/*"} value={"*/*"}><SchemaTabs className={"openapi-tabs__schema"}><TabItem label={"Schema"} value={"Schema"}><details style={{}} className={"openapi-markdown__details response"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-response"}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><li><div style={{"fontSize":"var(--ifm-code-font-size)","opacity":"0.6","marginLeft":"-.5rem","paddingBottom":".5rem"}}>Array [</div></li><SchemaItem collapsible={false} name={"account_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_national_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_name"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_type"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_is_active"} required={false} schemaName={"boolean"} qualifierMessage={undefined} schema={{"type":"boolean"}}></SchemaItem><SchemaItem collapsible={false} name={"account_currency"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_notification_email"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_created_at"} required={false} schemaName={"date-time"} qualifierMessage={undefined} schema={{"type":"string","format":"date-time"}}></SchemaItem><SchemaItem collapsible={false} name={"partner_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"nullable":true,"type":"string"}}></SchemaItem><li><div style={{"fontSize":"var(--ifm-code-font-size)","opacity":"0.6","marginLeft":"-.5rem"}}>]</div></li></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"[\n  {\n    \"account_id\": \"string\",\n    \"account_national_id\": \"string\",\n    \"account_name\": \"string\",\n    \"account_type\": \"string\",\n    \"account_is_active\": true,\n    \"account_currency\": \"string\",\n    \"account_notification_email\": \"string\",\n    \"account_created_at\": \"2024-04-04T18:13:39.829Z\",\n    \"partner_id\": \"string\"\n  }\n]"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem></ApiTabs></div></div>
+      

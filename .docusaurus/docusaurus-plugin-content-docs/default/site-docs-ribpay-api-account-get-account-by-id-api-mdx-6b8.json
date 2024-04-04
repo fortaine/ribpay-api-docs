@@ -1,0 +1,35 @@
+{
+  "unversionedId": "ribpay-api/Account/get-account-by-id",
+  "id": "ribpay-api/Account/get-account-by-id",
+  "title": "Retrieve a specific account by ID",
+  "description": "Retrieve a specific account by ID",
+  "source": "@site/docs/ribpay-api/Account/get-account-by-id.api.mdx",
+  "sourceDirName": "ribpay-api/Account",
+  "slug": "/ribpay-api/Account/get-account-by-id",
+  "permalink": "/docs/ribpay-api/Account/get-account-by-id",
+  "draft": false,
+  "editUrl": null,
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "id": "get-account-by-id",
+    "title": "Retrieve a specific account by ID",
+    "description": "Retrieve a specific account by ID",
+    "sidebar_label": "Retrieve a specific account by ID",
+    "hide_title": true,
+    "hide_table_of_contents": true,
+    "api": "eJyVVE2P2jAQ/SuR1UO7IgtsqcRyKqt+aK/b9oQomjgTcGvsrO3QRlH+e2eSAKEg2s0lnvGM5/nNG1fC5uggKGseUzETawxzKW1hwkNJjoHIwcEWAzovZotKOHwulEMKDa7AgVCGknIIGwo1FEiW4jQvN7gFMatEKHP2+uCUWTcHBjqN074vRvE9xNk8/rSspnXcNydkjuN3y77vLfmm95DMH87cPXN8V78Sdb0cEFafW+PRM4y70Yh/KXrpVM73JQRfCinR+6zQkUMCiDvQkc0iaCkgtNKagLSi1JvhDf+ON3vpWR0TNvmBku3cMfdBtQC7uBXRd8ZaPThsm6ZXoP8dx824EtBuXAlQfgUyqF0/KrFWI5h+mCycQyPL62hsUJmSDfYV0af01XDpEAKmKwiXFJRZt+UdkVJQHBRdtG6EGgy6jhdTaA2Jxr1O/yrVfAMxGU3OG9npPyLMUUar9EUyuJR9vfFbUg2sL/ViD/O0wlOrLowg8jlK5nUvsigpo8cPVIEmdmO7eW5nbkPGsAsbViqtBQ9vZrnsjqa7PXt6O57cjhiyCkyeeJ+Bp9aVQ/8L1mt0DdPWhy2JgGluR/5/IJ1c4nDVgL/DMNegGk0VrtFFC3chjqMzo67SRG+oMm9UVQIevzld1+x+LtCR/ha03IFTbd/psUqV5zXxkIH2eIbh0FXx+ql7195Ex36dYuucYErBZXTBFi1/Ytk+evWSojYIKbHE1dsN0gPmoZfC+uHX6dCizx+/Uqv/ADea4iQ=",
+    "sidebar_class_name": "get api-method",
+    "info_path": "docs/ribpay-api/fastify-swagger",
+    "custom_edit_url": null
+  },
+  "sidebar": "ribpaySidebar",
+  "previous": {
+    "title": "Delete an account",
+    "permalink": "/docs/ribpay-api/Account/delete-account"
+  },
+  "next": {
+    "title": "Retrieve all accounts",
+    "permalink": "/docs/ribpay-api/Account/get-all-accounts"
+  }
+}

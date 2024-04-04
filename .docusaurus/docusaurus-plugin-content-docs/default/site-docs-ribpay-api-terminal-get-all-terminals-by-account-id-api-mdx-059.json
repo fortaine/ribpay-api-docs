@@ -1,0 +1,35 @@
+{
+  "unversionedId": "ribpay-api/Terminal/get-all-terminals-by-account-id",
+  "id": "ribpay-api/Terminal/get-all-terminals-by-account-id",
+  "title": "Retrieve all terminals by account ID",
+  "description": "Retrieve all terminals by account ID",
+  "source": "@site/docs/ribpay-api/Terminal/get-all-terminals-by-account-id.api.mdx",
+  "sourceDirName": "ribpay-api/Terminal",
+  "slug": "/ribpay-api/Terminal/get-all-terminals-by-account-id",
+  "permalink": "/docs/ribpay-api/Terminal/get-all-terminals-by-account-id",
+  "draft": false,
+  "editUrl": null,
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "id": "get-all-terminals-by-account-id",
+    "title": "Retrieve all terminals by account ID",
+    "description": "Retrieve all terminals by account ID",
+    "sidebar_label": "Retrieve all terminals by account ID",
+    "hide_title": true,
+    "hide_table_of_contents": true,
+    "api": "eJyVVEtv2kAQ/ivWqoc2ghhSKhFOJepDuabpCVE0NmO87XrX2R3TIsv/vTOxASNQlPjind15fPPNo1auRA+knb1fq5naIM2NeURfaAsm3O3maeoqS/w4UCV4KJDQBzVb1GqNIfW6FFu2fMwxglY5uv8SkYsybVg3or2zKNmxE49PlfbIwchXOFBajEugnN8su2epc7PSEjSkORagZrWiXSmvgby2m2c4xL7F/NdiNLyFYTYfflvW02bYFycsjoeflv27j3w3vYVkfnd23RPHN8071TRLwRxKZwMGgXEzGsnvNPsfVZpiCFllIo8MELdgIpcdk2e8qbOElsT4Kr6S3zG3t3vr2ADvQWjVhEXoseSS35iSsOSlwqRb8HsPwu0Zpc3g+G4gQfOySgZb5znuShLzkNKq1b1g06vo+XP7DdRkNDmnouu/yDqKMj6t30TkJeuXCSqYd9hcymIP8zTCQ1sf7n1jTlq9NwwchMcmd92Ata2bsxDvDeJOOa71upFq2swJhC3PWhtnej2eXI8EviYjsD5nEEhnuzj8hc0GvdBcukAFWLHsRumV8E5yOmRO+I/i0gCPKDuv/HM/tNAXhzZQh+ryacYF5nnJGYfo1HUCAX960zRy/VSh3/E9H7fgNSSSiCwSHeTM9GQMDs/gHOqt3j902+ND9Np9czGX/fBY0eDhqkTi4x/cne6fZsnaOcKaCRaorQK3FZbUM5U2lEVxKPP3r4/cMf8BLjrVEQ==",
+    "sidebar_class_name": "get api-method",
+    "info_path": "docs/ribpay-api/fastify-swagger",
+    "custom_edit_url": null
+  },
+  "sidebar": "ribpaySidebar",
+  "previous": {
+    "title": "Delete a terminal",
+    "permalink": "/docs/ribpay-api/Terminal/delete-terminal"
+  },
+  "next": {
+    "title": "Retrieve all terminals",
+    "permalink": "/docs/ribpay-api/Terminal/get-all-terminals"
+  }
+}
