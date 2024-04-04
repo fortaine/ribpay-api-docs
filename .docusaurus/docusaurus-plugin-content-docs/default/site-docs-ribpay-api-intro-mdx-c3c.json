@@ -1,0 +1,29 @@
+{
+  "unversionedId": "ribpay-api/intro",
+  "id": "ribpay-api/intro",
+  "title": "Introduction",
+  "description": "",
+  "source": "@site/docs/ribpay-api/intro.mdx",
+  "sourceDirName": "ribpay-api",
+  "slug": "/ribpay-api/intro",
+  "permalink": "/docs/ribpay-api/intro",
+  "draft": false,
+  "editUrl": null,
+  "tags": [],
+  "version": "current",
+  "sidebarPosition": 0,
+  "frontMatter": {
+    "id": "intro",
+    "title": "Introduction",
+    "description": "",
+    "sidebar_label": "Introduction",
+    "sidebar_position": 0,
+    "hide_title": true,
+    "custom_edit_url": null
+  },
+  "sidebar": "ribpaySidebar",
+  "next": {
+    "title": "Create a new account",
+    "permalink": "/docs/ribpay-api/Account/create-account"
+  }
+}

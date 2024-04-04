@@ -1,0 +1,40 @@
+---
+id: get-transactions
+title: "Retrieve all transactions"
+description: "Retrieve all transactions"
+sidebar_label: "Retrieve all transactions"
+hide_title: true
+hide_table_of_contents: true
+api: eJydU02PEzEM/StVjqtqWxAH1BMcEOIKy6mqKk/q6QTyheN0GY3637E7C5quthq0c8nEeX5+fnEGkzISsEvxy8FszBH5gSAWsBoqZmkIS5Y/LGYzmLfrtS4HLJZcVojkfKvWYilt9QtCJocn8IvULviayKbIGFnz71Z3uhTbYYBXE3KfUdBABL1sHWO4iHyKp+YHWpaDTNoju7GFCcneHSb4IpXi0ZyXV5DCwLXMwiCkGnlvpcEpONbQIN0APzruUuX9CXg2xVYijLafFZKhDyJiH1DI59v7n9oeGvQvMoG1l05u+Kg3TkJy02ek4CL4l8+fvuWz4fg6TgQuwPvnE/G3aR1jvXjgTjarCUrnJLZJy52Qykj5/v7Nu/u1TpRjrxI+tFDYtf2qPMLxODqSU+EAUTMjBJxRcqX5X2uMv3mVPbiojJUuro4qt1PLzW5pOqmn4WFooOB38uezhn9VJJmCrfyegBw0Kni7E7oO4SBSN9vB/ESBmI/yirL6IM+nanl9dufdxKbPnx7E5z8Hz2wq
+sidebar_class_name: "get api-method"
+info_path: docs/ribpay-api/fastify-swagger
+custom_edit_url: null
+---
+
+import ApiTabs from "@theme/ApiTabs";
+import DiscriminatorTabs from "@theme/DiscriminatorTabs";
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import SecuritySchemes from "@theme/ApiExplorer/SecuritySchemes";
+import MimeTabs from "@theme/MimeTabs";
+import ParamsItem from "@theme/ParamsItem";
+import ResponseSamples from "@theme/ResponseSamples";
+import SchemaItem from "@theme/SchemaItem";
+import SchemaTabs from "@theme/SchemaTabs";
+import Markdown from "@theme/Markdown";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+
+<h1 className={"openapi__heading"}>Retrieve all transactions</h1>
+
+<MethodEndpoint method={"get"} path={"/transaction"}></MethodEndpoint>
+
+
+
+Retrieve all transactions
+
+<div><div><ApiTabs label={undefined} id={undefined}><TabItem label={"200"} value={"200"}><div>
+
+Successful retrieval of transactions
+
+</div><div><MimeTabs className={"openapi-tabs__mime"} schemaType={"response"}><TabItem label={"*/*"} value={"*/*"}><SchemaTabs className={"openapi-tabs__schema"}><TabItem label={"Schema"} value={"Schema"}><details style={{}} className={"openapi-markdown__details response"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-response"}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><li><div style={{"fontSize":"var(--ifm-code-font-size)","opacity":"0.6","marginLeft":"-.5rem","paddingBottom":".5rem"}}>Array [</div></li><SchemaItem collapsible={false} name={"transaction_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_status"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_amount_cents"} required={false} schemaName={"number"} qualifierMessage={undefined} schema={{"type":"number"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_amount_without_vat"} required={false} schemaName={"number"} qualifierMessage={undefined} schema={{"type":"number"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_currency"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_payment_method"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_vat"} required={false} schemaName={"number"} qualifierMessage={undefined} schema={{"type":"number"}}></SchemaItem><SchemaItem collapsible={false} name={"transaction_label"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"contract_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"terminal_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><li><div style={{"fontSize":"var(--ifm-code-font-size)","opacity":"0.6","marginLeft":"-.5rem"}}>]</div></li></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"[\n  {\n    \"transaction_id\": \"string\",\n    \"transaction_status\": \"string\",\n    \"transaction_amount_cents\": 0,\n    \"transaction_amount_without_vat\": 0,\n    \"transaction_currency\": \"string\",\n    \"transaction_payment_method\": \"string\",\n    \"transaction_vat\": 0,\n    \"transaction_label\": \"string\",\n    \"account_id\": \"string\",\n    \"contract_id\": \"string\",\n    \"terminal_id\": \"string\"\n  }\n]"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem></ApiTabs></div></div>
+      

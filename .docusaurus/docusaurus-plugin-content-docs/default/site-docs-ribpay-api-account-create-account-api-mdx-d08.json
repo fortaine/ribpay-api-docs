@@ -1,0 +1,35 @@
+{
+  "unversionedId": "ribpay-api/Account/create-account",
+  "id": "ribpay-api/Account/create-account",
+  "title": "Create a new account",
+  "description": "Create a new account",
+  "source": "@site/docs/ribpay-api/Account/create-account.api.mdx",
+  "sourceDirName": "ribpay-api/Account",
+  "slug": "/ribpay-api/Account/create-account",
+  "permalink": "/docs/ribpay-api/Account/create-account",
+  "draft": false,
+  "editUrl": null,
+  "tags": [],
+  "version": "current",
+  "frontMatter": {
+    "id": "create-account",
+    "title": "Create a new account",
+    "description": "Create a new account",
+    "sidebar_label": "Create a new account",
+    "hide_title": true,
+    "hide_table_of_contents": true,
+    "api": "eJydV02T2zYM/SseTQ5paq/tdA/pXjabTA85JdMml9iuhpJgmylFqiTljePRfw9A6nMtWd54Z5YS8QiQwCMAnQKVgWaWK/khCe6CWAOz8BDHKpc2mAYa/s/B2HcqOQZ3pyBW0gIK8JFlmeCxWzn/ZpSkORPvIWX0ZI8ZoDoVfYO40sM1oIlVwLz2kCUplygzKCAMj5gMNtMg07Qny8E4Ox30iOot18aGkqWAAsGa52yvJI24PS7OjbTWNRaM1VzugqKtqU/qdZ9JUMCsBY2bDv5dr3+/Xy1nf27W6+S0nC5vixe01G+nZ+lW6ZShn0sEQiOu7T5MMDqjppLTbTGn4XU1vGg0xNwee49RisnZugfRsbF6mH3deL1FUUWwT6mL6XW6Vgt0D44v7+9Wm/sVm/1AAc39dlq+mf6x8MacPQ0mU9L42L1eLGlIwMSaZ8RH1FoyeOL5nExMHsdgzDYX4ojmWzx+NX/Vpe6zFD0lY5dWKSLZrp811Rn6KN17A64GhjzptViJpbu0TIzjBghfAbzgAoCbkMWWH9qoSCkBSIoWLM61Bhn307LejbJ8WyaccODetHX6eIWsh5et60X3aWY5HpQuMtNWgi79IjHELBK4zuocpk9NEQ9zA3o8LIQa8rWTjWQfh7mcghxk2ClOPJCmKrFW4oL0UvbpYgbzSxszlGScVzExYKpnYtyzFXLIu7UcAwl9rilc3hMCXx6SBK+kGTda4rEguQVDtp/ArsGgX9JMQIqZKRQqZoIb5tPQKBvPdck8Ba3Cg+L9ITs7hkx4DKGGDCz/ZasEuN6m4BgW8YwFCSdZlLskYDKIOfOsffZGY5VAmCljWf+VGdoqhijNB+7R0zUZO14bd9pMP5ooSuVKYyYdJ2eFHGJlLR/M3TUCCRR10lsPxuRRXSxHTUYgATM4Z/o4nMkcgTDE6I2Q5XavNP9BafxyaeusEpwN3Mr6Nw1uF4vzYv9BHnB1Mim73gnmO/asbmFAwa92CdVmu0beu9I2YRMJjxNWt+opoLeohydW+xZrj2/zBkFt+t9NQ//Xd0bpprfJbpekpmy2ilCrlfN1pZko65BL+G/BG7nBexN0m9hmQbtwnM1WpaIV7bLdbKC+y2y3nXKr6BgH0MY77c3N8vZmQbHgls4cvN3iYfj2ODePbLdDolMDgJ5LfcNannLA152A1GGz8N3OM8G4625y7TKLD0P91UPfHnsKEE6dThEz8EWLoqBpDAwddIWPB6a5T2erDaraA0voKq5OwX9AvnjvGTn7TIYJLnLawNk3WTGtVmAfC5ltYYnJxaZFm08f//lMbi8/9VLMSTir2SN9Y+H/u2CNf/ii3Lkddd38CXkhd7mjcODN0u8n6+URHg==",
+    "sidebar_class_name": "post api-method",
+    "info_path": "docs/ribpay-api/fastify-swagger",
+    "custom_edit_url": null
+  },
+  "sidebar": "ribpaySidebar",
+  "previous": {
+    "title": "Introduction",
+    "permalink": "/docs/ribpay-api/intro"
+  },
+  "next": {
+    "title": "Delete an account",
+    "permalink": "/docs/ribpay-api/Account/delete-account"
+  }
+}

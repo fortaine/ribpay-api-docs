@@ -1,0 +1,46 @@
+---
+id: get-terminal-by-id
+title: "Retrieve a specific terminal by ID"
+description: "Retrieve a specific terminal by ID"
+sidebar_label: "Retrieve a specific terminal by ID"
+hide_title: true
+hide_table_of_contents: true
+api: eJydVEtv2zAM/iuGsMNWJE3SpUCa01LsgV677hRkAS3TsTZHciU6m2H4v4+MnRcSFGt9sUjx8fEjqVq5Aj2QcfYhUVO1QnpCvzYW8vuKNT1VgIc1EvqgpvNaeXwujUe2JV9iTxnLXgVQxqaWDVky4hZ0hmtQ01pRVYg2kDd2tQ1IHE3cfs6H/Tvop7P+10U9afrH4pjFUf92caz7yLrJHcSz+zP1kTi6ad6ppln0GGsonA0YBMbNcCi/BIP2ppCCGcH3UmsMIS3zyCMDxA3kkUsj6jiIEiQweWDY2llCSxLjanAlv0OJbw7acePiX6hJuPHSDjIt5J3Dkhk9I7LpHe5ziDF/2SSFjfOGcCl1eNC0bG0v+IDWrrR0Oev266nxcHxe+G5yIusoSjlG8ireLrq/zNCaeYbVpTJ2QE9TPLb9wAiiUKA2qdGHtsRV9PCZU/C0Z65bhnZeMxYGO7tBbZJGyeSnThJveDXa6JPr0fh6KKAN5QLmUwqBTFoNwh9YrdALu4ULtAYrnt2+/Beokzr21RL+pUGRA28hhy79dghawPN979l7yr3khcg4t9zUdQwBf/i8aUT9XKKvWM/HDXgDsYDnXU9MkDNTkUIe8AzEvrXq/WP3LHyIDj07BdcpwVZK0uSlSHz8jVX7ZjQLtsoQEuZJsrcXM96lgo5cZIhkufdd+vblidv9D0B+nvI=
+sidebar_class_name: "get api-method"
+info_path: docs/ribpay-api/fastify-swagger
+custom_edit_url: null
+---
+
+import ApiTabs from "@theme/ApiTabs";
+import DiscriminatorTabs from "@theme/DiscriminatorTabs";
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import SecuritySchemes from "@theme/ApiExplorer/SecuritySchemes";
+import MimeTabs from "@theme/MimeTabs";
+import ParamsItem from "@theme/ParamsItem";
+import ResponseSamples from "@theme/ResponseSamples";
+import SchemaItem from "@theme/SchemaItem";
+import SchemaTabs from "@theme/SchemaTabs";
+import Markdown from "@theme/Markdown";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+
+<h1 className={"openapi__heading"}>Retrieve a specific terminal by ID</h1>
+
+<MethodEndpoint method={"get"} path={"/terminal/{id}"}></MethodEndpoint>
+
+
+
+Retrieve a specific terminal by ID
+
+## Request
+
+<details style={{"marginBottom":"1rem"}} className={"openapi-markdown__details"} data-collapsed={false} open={true}><summary style={{}}><h3 className={"openapi-markdown__details-summary-header-params"}>Path Parameters</h3></summary><div><ul><ParamsItem className={"paramsItem"} param={{"required":true,"in":"path","name":"id","schema":{"type":"string","pattern":"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"}}}></ParamsItem></ul></div></details><div><div><ApiTabs label={undefined} id={undefined}><TabItem label={"200"} value={"200"}><div>
+
+Successful retrieval of terminal details
+
+</div><div><MimeTabs className={"openapi-tabs__mime"} schemaType={"response"}><TabItem label={"*/*"} value={"*/*"}><SchemaTabs className={"openapi-tabs__schema"}><TabItem label={"Schema"} value={"Schema"}><details style={{}} className={"openapi-markdown__details response"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-response"}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><SchemaItem collapsible={false} name={"terminal_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"terminal_label"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"terminal_favorite_contract_type"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"{\n  \"terminal_id\": \"string\",\n  \"terminal_label\": \"string\",\n  \"terminal_favorite_contract_type\": \"string\",\n  \"account_id\": \"string\"\n}"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem><TabItem label={"404"} value={"404"}><div>
+
+Terminal not found
+
+</div><div><MimeTabs className={"openapi-tabs__mime"} schemaType={"response"}><TabItem label={"*/*"} value={"*/*"}><SchemaTabs className={"openapi-tabs__schema"}><TabItem label={"Schema"} value={"Schema"}><details style={{}} className={"openapi-markdown__details response"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-response"}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><SchemaItem collapsible={false} name={"message"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"{\n  \"message\": \"string\"\n}"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem></ApiTabs></div></div>
+      

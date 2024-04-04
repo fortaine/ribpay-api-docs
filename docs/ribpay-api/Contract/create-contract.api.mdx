@@ -1,0 +1,46 @@
+---
+id: create-contract
+title: "Create a contract"
+description: "Create a contract"
+sidebar_label: "Create a contract"
+hide_title: true
+hide_table_of_contents: true
+api: eJzFVVFP2zAQ/iuVtYcNJbQFJpW+sDJtEk9DDB62LKsuiduaJbZnO0CI8t93l1CSlpSKp6VSE5/vvjvffXcumdLcgBNKXiRsymLDwfHPSjoDsWMeM/xvzq07V0nBpiWLcYdLR5+gdSri2nR4a5UkmY1XPAP6coXmiKeiW/6MIwxHH0ENQvDzWsljEMcql24uElyICCQLPaYNReYEt2u/rUmLb50RcolmXOYZYV9dnF/OfrCw8pjjJhMSUsLtsdDgUAPDZr+DkX8K/mLmfw3LSeV3lye4HPsfw67sGGWTU4hm5y/EneX4qHrHqo3T/cco6rTu8T/zf4blUUXm9H5/Ng3CswD8R9wg2YdyPPGORwRYP1RVq5W0TY2ORiN6JdzGRmjiBaKuqTRomJUMbB7H3NpFnqYF+u8Q6mB4sMmhtyFtM24HgfrKUHn7CNbVQKZF3LyuY/PoOfa9LiMu+ULEAkwxl5D1uyfB3IhIQzGHVIDdBbuhmLuVMuKRJ/PXaLiHpft6ac2Gkz4CXMg7DDcZPA2SQQIO3lT3HQCvlztDYsCyL5PrYLfIVXNqAIO4HX0Zx+TRUNTKuqZVVrgadlRo7l21E/LLA2Q65T0Daz2XtjLZ9mE3/6206dpOHYRcKIK/48Y2kU8OxyeHIwIWjlyzTwuwTiyKob2H5RKJimZ0gqwZAA3Beg+8kZLnxDn+4IY6BSEJKTcp7TW5aEc5TewVpQllZRmB5TcmrSoSY3YM3h0Bft6BERBRlAEN6BWHhBopKNkfXjy1OJLCv27uBax7ThG8uGkqb20xwxGgXUeXyFSFneJdfvt+jfvR0wWWqYTUDNzTpYT/U/YLf7hQ9cFr9tTykqUgl3nNIta4pecfhS9ydQ==
+sidebar_class_name: "post api-method"
+info_path: docs/ribpay-api/fastify-swagger
+custom_edit_url: null
+---
+
+import ApiTabs from "@theme/ApiTabs";
+import DiscriminatorTabs from "@theme/DiscriminatorTabs";
+import MethodEndpoint from "@theme/ApiExplorer/MethodEndpoint";
+import SecuritySchemes from "@theme/ApiExplorer/SecuritySchemes";
+import MimeTabs from "@theme/MimeTabs";
+import ParamsItem from "@theme/ParamsItem";
+import ResponseSamples from "@theme/ResponseSamples";
+import SchemaItem from "@theme/SchemaItem";
+import SchemaTabs from "@theme/SchemaTabs";
+import Markdown from "@theme/Markdown";
+import OperationTabs from "@theme/OperationTabs";
+import TabItem from "@theme/TabItem";
+
+<h1 className={"openapi__heading"}>Create a contract</h1>
+
+<MethodEndpoint method={"post"} path={"/contract"}></MethodEndpoint>
+
+
+
+Create a contract
+
+## Request
+
+<MimeTabs className={"openapi-tabs__mime"}><TabItem label={"application/json"} value={"application/json-schema"}><details style={{}} className={"openapi-markdown__details mime"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-mime"}><h3 className={"openapi-markdown__details-summary-header-body"}>Body</h3></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><SchemaItem collapsible={false} name={"contract_type"} required={true} schemaName={"string"} qualifierMessage={"**Possible values:** [`RIBPAY`]"} schema={{"type":"string","enum":["RIBPAY"]}}></SchemaItem><SchemaItem collapsible={false} name={"terminal_id"} required={false} schemaName={"string"} qualifierMessage={"**Possible values:** Value must match regular expression `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`"} schema={{"type":"string","pattern":"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"}}></SchemaItem><SchemaItem collapsible={false} name={"account_id"} required={true} schemaName={"string"} qualifierMessage={"**Possible values:** Value must match regular expression `^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$`"} schema={{"type":"string","pattern":"^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$"}}></SchemaItem><SchemaItem collapsible={false} name={"iban"} required={true} schemaName={"string"} qualifierMessage={"**Possible values:** Value must match regular expression `^[A-Z]{2}[0-9]{2}(?:[]?[a-zA-Z0-9]){18,30}$`"} schema={{"type":"string","pattern":"^[A-Z]{2}[0-9]{2}(?:[]?[a-zA-Z0-9]){18,30}$"}}></SchemaItem></ul></details></TabItem></MimeTabs><div><div><ApiTabs label={undefined} id={undefined}><TabItem label={"200"} value={"200"}><div>
+
+Contract created successfully
+
+</div><div><MimeTabs className={"openapi-tabs__mime"} schemaType={"response"}><TabItem label={"*/*"} value={"*/*"}><SchemaTabs className={"openapi-tabs__schema"}><TabItem label={"Schema"} value={"Schema"}><details style={{}} className={"openapi-markdown__details response"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-response"}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><SchemaItem collapsible={false} name={"contract_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"contract_type"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"contract_number"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"contract_subscription_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"contract_beneficiary_name"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"type_ribpay_alias_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"type_ribpay_authorized_account_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"account_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem><SchemaItem collapsible={false} name={"terminal_id"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"{\n  \"contract_id\": \"string\",\n  \"contract_type\": \"string\",\n  \"contract_number\": \"string\",\n  \"contract_subscription_id\": \"string\",\n  \"contract_beneficiary_name\": \"string\",\n  \"type_ribpay_alias_id\": \"string\",\n  \"type_ribpay_authorized_account_id\": \"string\",\n  \"account_id\": \"string\",\n  \"terminal_id\": \"string\"\n}"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem><TabItem label={"400"} value={"400"}><div>
+
+Invalid request data
+
+</div><div><MimeTabs className={"openapi-tabs__mime"} schemaType={"response"}><TabItem label={"*/*"} value={"*/*"}><SchemaTabs className={"openapi-tabs__schema"}><TabItem label={"Schema"} value={"Schema"}><details style={{}} className={"openapi-markdown__details response"} data-collapsed={false} open={true}><summary style={{}} className={"openapi-markdown__details-summary-response"}><strong>Schema</strong></summary><div style={{"textAlign":"left","marginLeft":"1rem"}}></div><ul style={{"marginLeft":"1rem"}}><SchemaItem collapsible={false} name={"message"} required={false} schemaName={"string"} qualifierMessage={undefined} schema={{"type":"string"}}></SchemaItem></ul></details></TabItem><TabItem label={"Example (from schema)"} value={"Example (from schema)"}><ResponseSamples responseExample={"{\n  \"message\": \"string\"\n}"} language={"json"}></ResponseSamples></TabItem></SchemaTabs></TabItem></MimeTabs></div></TabItem></ApiTabs></div></div>
+      
