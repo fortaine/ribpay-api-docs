@@ -1,40 +1,34 @@
-# Template
+This is a [Next.js](https://nextjs.org/) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
-This template is built for [Docusaurus 2](https://docusaurus.io/), a modern static website generator.
+## Getting Started
 
-### Usage
-
-```bash
-npx create-docusaurus@2.4.3 my-website --package-manager yarn
-```
-
-> When prompted to select a template choose `Git repository`.
-
-Template Repository URL:
+First, run the development server:
 
 ```bash
-https://github.com/PaloAltoNetworks/docusaurus-template-openapi-docs.git
+npm run dev
+# or
+yarn dev
 ```
 
-> When asked how the template repo should be cloned choose "copy" (unless you know better).
+Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
 
-```bash
-cd my-website
-yarn
-```
+You can start editing the page by modifying `pages/index.tsx`. The page auto-updates as you edit the file.
 
-### Local Development
+[API routes](https://nextjs.org/docs/api-routes/introduction) can be accessed on [http://localhost:3000/api/hello](http://localhost:3000/api/hello). This endpoint can be edited in `pages/api/hello.ts`.
 
-```bash
-yarn start
-```
+The `pages/api` directory is mapped to `/api/*`. Files in this directory are treated as [API routes](https://nextjs.org/docs/api-routes/introduction) instead of React pages.
 
-This command starts a local development server and opens up a browser window. Most changes are reflected live without having to restart the server.
+## Learn More
 
-### Build
+To learn more about Next.js, take a look at the following resources:
 
-```bash
-yarn build
-```
+- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
+- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
 
-This command generates static content into the `build` directory and can be served using any static contents hosting service.
+You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js/) - your feedback and contributions are welcome!
+
+## Deploy on Vercel
+
+The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+
+Check out our [Next.js deployment documentation](https://nextjs.org/docs/deployment) for more details.
