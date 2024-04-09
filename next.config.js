@@ -22,7 +22,7 @@ module.exports = {
       // }
       {
         source: "/(.*)",
-        destination: "https://ribpay-docs.vercel.app/docs/ribpay-api/intro",
+        destination: "https://ribpay-api-docs-vercel.vercel.app/docs/ribpay-api/intro",
         permanent: true,
       },
     ];
